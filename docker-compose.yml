@@ -5,12 +5,10 @@ services:
     image: mysql:8.0
     container_name: mysql-db
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:root}
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: api_passa_bola
-      MYSQL_USER: ${DB_USER:root}
-      MYSQL_PASSWORD: ${DB_PASSWORD:root}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -23,15 +21,15 @@ services:
 
   api-passa-bola:
     build:
-      context: ./api/api
+      context: ./api
       dockerfile: Dockerfile
     container_name: api-passa-bola
     ports:
       - "8080:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/api_passa_bola?createDatabaseIfNotExist=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${DB_USER:root}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:root}
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
       JWT_SECRET: mySecretKeyForFootballSocialNetworkApplication2024
       JWT_EXPIRATION: 86400000
     depends_on:
