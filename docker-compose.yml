@@ -1,0 +1,97 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:root}
+      MYSQL_DATABASE: api_passa_bola
+      MYSQL_USER: ${DB_USER:root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - passa-bola-network
+
+  api-passa-bola:
+    build:
+      context: ./api/api
+      dockerfile: Dockerfile
+    container_name: api-passa-bola
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/api_passa_bola?createDatabaseIfNotExist=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:root}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:root}
+      JWT_SECRET: mySecretKeyForFootballSocialNetworkApplication2024
+      JWT_EXPIRATION: 86400000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - passa-bola-network
+
+  front-passa-bola:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    container_name: front-passa-bola
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080 # Ajuste se o front-end for acessado de fora do Docker
+    depends_on:
+      - api-passa-bola
+    networks:
+      - passa-bola-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api-passa-bola
+    networks:
+      - passa-bola-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000" # Grafana roda na porta 3000, mapeamos para 3001 no host
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - passa-bola-network
+
+volumes:
+  mysql_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  passa-bola-network:
+    driver: bridge
