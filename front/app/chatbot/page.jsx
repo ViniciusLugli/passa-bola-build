@@ -27,7 +27,7 @@ export default function ChatbotPage() {
     setInput("");
 
     try {
-      const response = await fetch("http://chatbot:5000/chat", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_CHATBOT_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

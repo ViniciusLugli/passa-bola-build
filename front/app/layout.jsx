@@ -1,3 +1,4 @@
+import React from "react";
 import { AuthProvider } from "@/app/context/AuthContext";
 import "./globals.css";
 

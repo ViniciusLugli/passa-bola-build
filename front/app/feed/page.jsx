@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "@/app/components/Header";
 import PostCard from "@/app/components/PostCard";
 import SearchBar from "@/app/components/SearchBar";

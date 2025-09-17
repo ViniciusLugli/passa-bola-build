@@ -44,7 +44,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://api-passa-bola:8080 # Ajustado para comunicação interna entre contêineres
+      NEXT_PUBLIC_API_URL: http://api-passa-bola:8080 
+      NEXT_PUBLIC_CHATBOT_URL: http://chatbot:5000
     depends_on:
       - api-passa-bola
     networks:
