@@ -1,8 +1,12 @@
-const API_URL = "http://localhost:8080/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 let authToken = null;
 export const setAuthToken = (token) => {
   authToken = token;
+};
+
+export const clearAuthToken = () => {
+  authToken = null;
 };
 
 async function fetchApi(endpoint, options = {}) {

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   mysql:
     image: mysql:8.0
@@ -46,7 +44,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080 # Ajuste se o front-end for acessado de fora do Docker
+      NEXT_PUBLIC_API_URL: http://api-passa-bola:8080 # Ajustado para comunicação interna entre contêineres
     depends_on:
       - api-passa-bola
     networks:
