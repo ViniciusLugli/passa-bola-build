@@ -85,6 +85,18 @@ services:
     networks:
       - passa-bola-network
 
+  chatbot:
+    build:
+      context: ./chatbot
+      dockerfile: Dockerfile
+    container_name: chatbot
+    ports:
+      - "5000:5000"
+    depends_on:
+      - api-passa-bola
+    networks:
+      - passa-bola-network
+
 volumes:
   mysql_data:
   prometheus_data:
