@@ -1,17 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react"; // Importar useState e useEffect
-import { api } from "@/app/lib/api"; // Importar a API
-import { useAuth } from "@/app/context/AuthContext"; // Importar useAuth
+import { useState, useEffect } from "react";
+import { api } from "@/app/lib/api";
+import { useAuth } from "@/app/context/AuthContext";
 
 function PostCard({ post }) {
   const { isAuthenticated } = useAuth(); // Obter estado de autenticação
-  const [hasLiked, setHasLiked] = useState(post.isLikedByCurrentUser || false); // Inicializar com dados da API
+  const [hasLiked, setHasLiked] = useState(post.isLikedByCurrentUser || false);
   const [currentLikes, setCurrentLikes] = useState(
     post.totalLikes || post.likes || 0
-  ); // Inicializar com dados da API
+  );
 
-  // Sincronizar estado local com props do post se o post mudar
   useEffect(() => {
     setHasLiked(post.isLikedByCurrentUser || false);
     setCurrentLikes(post.totalLikes || post.likes || 0);
@@ -39,7 +38,7 @@ function PostCard({ post }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
+    <div className="bg-white border border-zinc-300 rounded-lg shadow-xl p-4">
       <div className="flex items-center mb-4">
         <div className="relative w-10 h-10 rounded-full overflow-hidden mr-3">
           <Image

@@ -13,7 +13,7 @@ async function fetchApi(endpoint, options = {}) {
   const { body, ...customConfig } = options;
   const headers = { "Content-Type": "application/json" };
 
-  if (authToken) {
+  if (authToken && !customConfig.skipAuth) {
     headers["Authorization"] = `Bearer ${authToken}`;
   }
 
@@ -33,38 +33,49 @@ async function fetchApi(endpoint, options = {}) {
   try {
     const response = await fetch(`${API_URL}${endpoint}`, config);
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ message: response.statusText }));
-      return Promise.reject(errorData);
+      const parsedBody = await response.json().catch(() => null);
+      const errorObj = {
+        status: response.status,
+        statusText: response.statusText,
+        body: parsedBody,
+      };
+      if (parsedBody && typeof parsedBody === "object" && parsedBody.message) {
+        errorObj.message = parsedBody.message;
+      }
+
+      return Promise.reject(errorObj);
     }
     if (response.status === 204) {
-      return null; // No Content
+      return null;
     }
 
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       return response.json();
     } else {
-      // Se não for JSON, tenta ler como texto. Se for vazio, retorna null.
       const text = await response.text();
       return text ? text : null;
     }
   } catch (error) {
-    return Promise.reject(error);
+    // Normalize thrown errors to include a message
+    return Promise.reject({ message: error.message || String(error) });
   }
 }
 
 async function fetchApiFormData(endpoint, formData, options = {}) {
   const { ...customConfig } = options;
-  const headers = {}; // FormData sets its own Content-Type header
+  const headers = {};
 
-  if (authToken) {
+  // Respect skipAuth option for form-data requests as well
+  if (authToken && !customConfig.skipAuth) {
     headers["Authorization"] = `Bearer ${authToken}`;
   }
 
+  // Debug: indicate whether Authorization will be attached for form-data
+  // (debug logging removed)
+
   const config = {
-    method: "PUT", // Assumindo PUT para uploads de foto
+    method: "PUT",
     ...customConfig,
     headers: {
       ...headers,
@@ -76,13 +87,19 @@ async function fetchApiFormData(endpoint, formData, options = {}) {
   try {
     const response = await fetch(`${API_URL}${endpoint}`, config);
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ message: response.statusText }));
-      return Promise.reject(errorData);
+      const parsedBody = await response.json().catch(() => null);
+      const errorObj = {
+        status: response.status,
+        statusText: response.statusText,
+        body: parsedBody,
+      };
+      if (parsedBody && typeof parsedBody === "object" && parsedBody.message) {
+        errorObj.message = parsedBody.message;
+      }
+      return Promise.reject(errorObj);
     }
     if (response.status === 204) {
-      return null; // No Content
+      return null;
     }
     return response.json();
   } catch (error) {
@@ -90,7 +107,6 @@ async function fetchApiFormData(endpoint, formData, options = {}) {
   }
 }
 
-// Importar as funções de criação de rotas
 import createAuthRoutes from "./routes/authRoutes";
 import createPlayerRoutes from "./routes/playerRoutes";
 import createOrganizationRoutes from "./routes/organizationRoutes";

@@ -3,7 +3,7 @@ export default class Team {
     this.id = id;
     this.nameTeam = nameTeam;
     this.leaderId = leaderId;
-    this.players = players; // Array de IDs de jogadores
-    this.invites = invites; // Array de objetos de convite (TeamInvite)
+    this.players = players;
+    this.invites = invites;
   }
 }

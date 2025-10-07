@@ -31,9 +31,9 @@ export default function UserListPage() {
       try {
         let response;
         if (listType === "followers") {
-          response = await api.follow.getFollowers(id, userType.toUpperCase()); // Corrigido para maiúsculas
+          response = await api.follow.getFollowers(id, userType.toUpperCase());
         } else if (listType === "following") {
-          response = await api.follow.getFollowing(id, userType.toUpperCase()); // Corrigido para maiúsculas
+          response = await api.follow.getFollowing(id, userType.toUpperCase());
         } else {
           throw new Error("Tipo de lista inválido.");
         }

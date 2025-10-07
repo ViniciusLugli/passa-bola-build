@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image"; // Importar o componente Image do Next.js
+import Image from "next/image";
 
 const decorations = [
   {
     src: "/DecoB (tatica 1).svg",
     className:
       "absolute top-[5%] left-[5%] w-24 h-24 transform rotate-[-15deg]",
-    width: 96, // Adicionar width e height para o componente Image
+    width: 96,
     height: 96,
   },
   {
@@ -93,7 +93,7 @@ export default function HomePage() {
             className={deco.className}
             width={deco.width}
             height={deco.height}
-            loading="lazy" // Adicionar lazy loading
+            loading="lazy"
           />
         ))}
       </div>

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Header from "@/app/components/Header";
 import ProfileHeader from "@/app/components/ProfileHeader";
-import PostList from "@/app/components/PostList"; // Importar PostList
+import PostList from "@/app/components/PostList";
 import { api } from "@/app/lib/api";
 import { useAuth } from "@/app/context/AuthContext";
 
@@ -57,58 +57,68 @@ export default function ProfilePage() {
 
       const isOwnProfile =
         loggedInUser &&
-        loggedInUser.id === Number(id) &&
+        loggedInUser.userId === fetchedUser.userId &&
         loggedInUser.userType.toLowerCase() === lowerCaseUserType;
 
-      // A API agora retorna os contadores de seguidores/seguindo diretamente na entidade do usuário.
-      // Se não estiverem presentes, calculamos a partir das listas.
       const updatedProfileUser = {
         ...fetchedUser,
         userType: lowerCaseUserType.toUpperCase(),
-        followers: fetchedUser.followers || 0, // Garante que o contador exista
-        following: fetchedUser.following || 0, // Garante que o contador exista
       };
 
-      let followersListResponse;
-      let followingListResponse;
+      // Buscar listas de seguidores e seguindo com tratamento de erro
+      let followersListResponse = { content: [], totalElements: 0 };
+      let followingListResponse = { content: [], totalElements: 0 };
 
-      if (isOwnProfile) {
-        followersListResponse = await api.follow.getMyFollowers();
-        followingListResponse = await api.follow.getMyFollowing();
-      } else {
-        followersListResponse = await api.follow.getFollowers(
-          id,
-          userType.toUpperCase()
-        );
-        followingListResponse = await api.follow.getFollowing(
-          id,
-          userType.toUpperCase()
-        );
+      try {
+        if (isOwnProfile) {
+          // Para o próprio perfil, usar endpoints privados
+          followersListResponse = await api.follow.getMyFollowers();
+          followingListResponse = await api.follow.getMyFollowing();
+        } else {
+          // Para outros perfis, usar endpoints públicos com userId
+          if (fetchedUser.userId) {
+            // Tenta buscar seguidores (endpoint público usa userId)
+            try {
+              followersListResponse = await api.follow.getFollowers(
+                fetchedUser.userId,
+                userType.toUpperCase()
+              );
+            } catch (followersError) {
+              console.error("Erro ao buscar seguidores:", followersError);
+              // Mantém valores padrão
+            }
+
+            // Tenta buscar seguindo (endpoint público usa userId)
+            try {
+              followingListResponse = await api.follow.getFollowing(
+                fetchedUser.userId,
+                userType.toUpperCase()
+              );
+            } catch (followingError) {
+              console.error("Erro ao buscar seguindo:", followingError);
+              // Mantém valores padrão
+            }
+          }
+        }
+      } catch (followError) {
+        console.error("Erro ao buscar dados de follow:", followError);
+        // Continua com valores padrão
       }
 
+      // Sempre usar as contagens das listas retornadas
       updatedProfileUser.followersList = followersListResponse.content || [];
       updatedProfileUser.followingList = followingListResponse.content || [];
-
-      // Se os contadores não vieram do fetchedUser (são null ou undefined), use o tamanho das listas
-      if (
-        fetchedUser.followers === null ||
-        fetchedUser.followers === undefined
-      ) {
-        updatedProfileUser.followers = updatedProfileUser.followersList.length;
-      }
-      if (
-        fetchedUser.following === null ||
-        fetchedUser.following === undefined
-      ) {
-        updatedProfileUser.following = updatedProfileUser.followingList.length;
-      }
+      updatedProfileUser.followers =
+        followersListResponse.totalElements ||
+        updatedProfileUser.followersList.length;
+      updatedProfileUser.following =
+        followingListResponse.totalElements ||
+        updatedProfileUser.followingList.length;
 
       setProfileUser(updatedProfileUser);
 
       const postsResponse = await api.posts.getByAuthor(id);
 
-      // A filtragem de posts pode ser removida se o backend garantir que os posts são do autor correto.
-      // Por enquanto, manteremos para segurança.
       const filteredPosts = (postsResponse.content || []).filter(
         (post) => post.authorType.toLowerCase() === lowerCaseUserType
       );
@@ -168,7 +178,6 @@ export default function ProfilePage() {
   }
 
   const handleFollowChange = () => {
-    // Re-fetch profile data to update follower/following counts
     fetchProfileData();
   };
 

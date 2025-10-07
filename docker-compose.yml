@@ -1,19 +1,21 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: mysql-db
+  mariadb:
+    image: mariadb:10.11
+    container_name: mariadb-db
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: api_passa_bola
     ports:
       - "3307:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - maridadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test:
+        ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot || exit 1"]
       interval: 10s
-      timeout: 5s
-      retries: 5
+      timeout: 10s
+      retries: 10
+      start_period: 30s
     networks:
       - passa-bola-network
 
@@ -25,13 +27,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/api_passa_bola?createDatabaseIfNotExist=true&serverTimezone=UTC
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mariadb:3306/api_passa_bola?createDatabaseIfNotExist=true&serverTimezone=UTC"
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       JWT_SECRET: mySecretKeyForFootballSocialNetworkApplication2024
       JWT_EXPIRATION: 86400000
     depends_on:
-      mysql:
+      mariadb:
         condition: service_healthy
     networks:
       - passa-bola-network
@@ -44,7 +46,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://api-passa-bola:8080 
+      NEXT_PUBLIC_API_URL: http://api-passa-bola:8080
       NEXT_PUBLIC_CHATBOT_URL: http://chatbot:5000
     depends_on:
       - api-passa-bola
@@ -97,7 +99,7 @@ services:
       - passa-bola-network
 
 volumes:
-  mysql_data:
+  maridadb_data:
   prometheus_data:
   grafana_data:
 

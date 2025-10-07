@@ -1,4 +1,3 @@
-// app/lib/routes/gameParticipantsRoutes.js
 const createGameParticipantsRoutes = (fetchApi) => ({
   join: (data) =>
     fetchApi("/game-participants/join", { method: "POST", body: data }),

@@ -10,21 +10,21 @@ O Passa-Bola é uma plataforma completa para jogadores, times e organizadores de
 
 ## ✨ Funcionalidades
 
--   **👤 Perfis Personalizados:** Crie seu perfil como Jogador, Organização ou Espectador.
--   **📅 Gestão de Partidas:** Organize e divulgue jogos de forma simples e rápida.
--   **📰 Feed de Notícias:** Compartilhe suas melhores jogadas, fotos e atualizações.
--   **🔍 Busca Inteligente:** Encontre times e jogadores compatíveis com seu estilo.
--   **🤖 Chatbot Assistente:** Tire suas dúvidas sobre o app a qualquer momento.
--   **📊 Monitoramento em Tempo Real:** Acompanhe a saúde da aplicação com dashboards interativos.
+- **👤 Perfis Personalizados:** Crie seu perfil como Jogador, Organização ou Espectador.
+- **📅 Gestão de Partidas:** Organize e divulgue jogos de forma simples e rápida.
+- **📰 Feed de Notícias:** Compartilhe suas melhores jogadas, fotos e atualizações.
+- **🔍 Busca Inteligente:** Encontre times e jogadores compatíveis com seu estilo.
+- **🤖 Chatbot Assistente:** Tire suas dúvidas sobre o app a qualquer momento.
+- **📊 Monitoramento em Tempo Real:** Acompanhe a saúde da aplicação com dashboards interativos.
 
 ## 🚀 Tecnologias Utilizadas
 
--   **Backend:** Spring Boot (Java)
--   **Frontend:** Next.js (React)
--   **Banco de Dados:** MySQL
--   **Chatbot:** Python (Flask)
--   **Monitoramento:** Prometheus & Grafana
--   **Containerização:** Docker & Docker Compose
+- **Backend:** Spring Boot (Java)
+- **Frontend:** Next.js (React)
+- **Banco de Dados:** MySQL
+- **Chatbot:** Python (Flask)
+- **Monitoramento:** Prometheus & Grafana
+- **Containerização:** Docker & Docker Compose
 
 ## 🏁 Começando
 
@@ -34,12 +34,12 @@ Siga este guia para configurar e executar o projeto em seu ambiente local.
 
 Antes de começar, certifique-se de que você tem as seguintes ferramentas instaladas em sua máquina:
 
--   [Git](https://git-scm.com/)
--   [Docker](https://www.docker.com/products/docker-desktop/) & [Docker Compose](https://docs.docker.com/compose/install/)
--   [Node.js (versão LTS)](https://nodejs.org/)
--   [Java (JDK 17 ou superior)](https://www.oracle.com/java/technologies/downloads/)
--   [Maven](https://maven.apache.org/download.cgi)
--   [Python](https://www.python.org/downloads/)
+- [Git](https://git-scm.com/)
+- [Docker](https://www.docker.com/products/docker-desktop/) & [Docker Compose](https://docs.docker.com/compose/install/)
+- [Node.js (versão LTS)](https://nodejs.org/)
+- [Java (JDK 17 ou superior)](https://www.oracle.com/java/technologies/downloads/)
+- [Maven](https://maven.apache.org/download.cgi)
+- [Python](https://www.python.org/downloads/)
 
 ### 📂 1. Clone o Repositório
 
@@ -62,12 +62,12 @@ Este comando irá construir as imagens Docker e iniciar todos os serviços em se
 
 Se você precisa de mais controle para desenvolver, pode rodar cada serviço individualmente.
 
-#### 🐘 Banco de Dados (MySQL)
+#### 🐘 Banco de Dados (MariaDB)
 
 Inicie apenas o banco de dados com o Docker Compose:
 
 ```bash
-docker-compose up -d mysql
+docker-compose up -d mariadb
 ```
 
 > 🔑 O banco de dados estará disponível na porta `3307` do seu `localhost`.
@@ -120,13 +120,13 @@ docker-compose up -d mysql
 
 Aqui estão os endereços para acessar cada parte da aplicação:
 
--   **Aplicação Principal (Frontend):** [http://localhost:3000](http://localhost:3000)
--   **API (Backend):** [http://localhost:8080](http://localhost:8080)
--   **Chatbot API:** [http://localhost:5000](http://localhost:5000)
--   **Prometheus (Monitoramento):** [http://localhost:9090](http://localhost:9090)
--   **Grafana (Dashboards):** [http://localhost:3001](http://localhost:3001)
-    -   **Usuário:** `admin`
-    -   **Senha:** `admin`
+- **Aplicação Principal (Frontend):** [http://localhost:3000](http://localhost:3000)
+- **API (Backend):** [http://localhost:8080](http://localhost:8080)
+- **Chatbot API:** [http://localhost:5000](http://localhost:5000)
+- **Prometheus (Monitoramento):** [http://localhost:9090](http://localhost:9090)
+- **Grafana (Dashboards):** [http://localhost:3001](http://localhost:3001)
+  - **Usuário:** `admin`
+  - **Senha:** `admin`
 
 ## 📂 Estrutura do Projeto
 

@@ -1,11 +1,16 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
 import Alert from "@/app/components/Alert";
+import Modal from "@/app/components/Modal";
+import JoinGameModal from "@/app/components/JoinGameModal";
 import GameForm from "./components/GameForm";
 import { useNewGameForm } from "./useNewGameForm";
 
 export default function NewGamePage() {
+  const router = useRouter();
   const {
     formData,
     handleInputChange,
@@ -13,7 +18,25 @@ export default function NewGamePage() {
     alert,
     loading,
     gameTypeOptions,
+    showHostParticipationModal,
+    setShowHostParticipationModal,
+    handleHostParticipationResponse,
+    createdGameId,
+    createdGame,
+    teams,
+    loadingTeams,
   } = useNewGameForm();
+
+  const [showJoinModal, setShowJoinModal] = useState(false);
+
+  const handleHostWantsToJoin = () => {
+    setShowHostParticipationModal(false);
+    setShowJoinModal(true);
+  };
+
+  const handleJoinSuccess = () => {
+    router.push("/games");
+  };
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -88,9 +111,54 @@ export default function NewGamePage() {
             alert={alert}
             loading={loading}
             gameTypeOptions={gameTypeOptions}
+            teams={teams}
+            loadingTeams={loadingTeams}
           />
         </div>
       </main>
+
+      <Modal
+        isOpen={showHostParticipationModal}
+        onClose={() => setShowHostParticipationModal(false)}
+        title="Participar do Jogo?"
+      >
+        <p className="text-gray-700 mb-6">
+          Deseja participar do jogo que você acabou de criar?
+        </p>
+        <div className="flex gap-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHostParticipationResponse(false);
+            }}
+            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            Não
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleHostWantsToJoin();
+            }}
+            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            Sim
+          </button>
+        </div>
+      </Modal>
+
+      {createdGameId && createdGame && (
+        <JoinGameModal
+          isOpen={showJoinModal}
+          onClose={() => {
+            setShowJoinModal(false);
+            router.push("/games");
+          }}
+          gameId={createdGameId}
+          game={createdGame}
+          onSuccess={handleJoinSuccess}
+        />
+      )}
     </div>
   );
 }

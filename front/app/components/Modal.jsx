@@ -3,12 +3,23 @@
 import { memo } from "react";
 
 const Modal = ({ isOpen, onClose, title, children }) => {
-  // Adicionar 'title'
   if (!isOpen) return null;
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full relative">
+    <div
+      className="fixed inset-0 backdrop-blur-sm bg-black/20 z-50 flex justify-center items-center"
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
@@ -28,7 +39,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
             />
           </svg>
         </button>
-        {title && ( // Renderizar título se existir
+        {title && (
           <h2 className="text-2xl font-bold text-gray-900 mb-4">{title}</h2>
         )}
         {children}

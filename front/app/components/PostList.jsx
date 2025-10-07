@@ -16,7 +16,7 @@ function PostList({ posts, profileUser }) {
             authorUsername: profileUser.username,
             authorProfilePhotoUrl:
               profileUser.profilePhotoUrl || "/icons/user-default.png",
-            authorRole: profileUser.userType, // Garante que o role do autor seja o do perfil
+            authorRole: profileUser.userType,
           }}
         />
       ))}

@@ -1,4 +1,3 @@
-// app/lib/routes/postRoutes.js
 const createPostRoutes = (fetchApi) => ({
   getAll: ({ page = 0, size = 20 } = {}) =>
     fetchApi(`/posts?page=${page}&size=${size}`),
@@ -26,7 +25,6 @@ const createPostRoutes = (fetchApi) => ({
     fetchApi(`/posts/${id}/comment`, { body: { comment } }),
   share: (id) => fetchApi(`/posts/${id}/share`, { method: "POST" }),
 
-  // Sistema de Likes
   getLikedStatus: (id) => fetchApi(`/posts/${id}/liked`),
   getLikes: (id) => fetchApi(`/posts/${id}/likes`),
   getLikesCount: (id) => fetchApi(`/posts/${id}/likes/count`),

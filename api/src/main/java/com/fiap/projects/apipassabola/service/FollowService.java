@@ -8,12 +8,15 @@ import com.fiap.projects.apipassabola.repository.PlayerRepository;
 import com.fiap.projects.apipassabola.repository.SpectatorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,24 +31,31 @@ public class FollowService {
     public String followUser(FollowRequest request) {
         UserContextService.UserIdAndType currentUser = userContextService.getCurrentUserIdAndType();
         
-        // Validar se não está tentando seguir a si mesmo
-        if (currentUser.getUserId().equals(request.getTargetUserId()) && 
-            currentUser.getUserType().equals(request.getTargetUserType())) {
+        // Converter String userId para Long
+        Long targetUserId = Long.parseLong(request.getTargetUserId());
+        
+        // Validar se não está tentando seguir a si mesmo (comparar userId global)
+        Long currentUserId = getCurrentEntityUserId(currentUser.getUserId(), currentUser.getUserType());
+        if (currentUserId.equals(targetUserId)) {
             throw new RuntimeException("You cannot follow yourself");
         }
         
         // Verificar se o usuário alvo existe
-        if (!userExists(request.getTargetUserId(), request.getTargetUserType())) {
+        if (!userExistsByUserId(targetUserId, request.getTargetUserType())) {
             throw new RuntimeException("Target user not found");
         }
         
+        // Buscar entity IDs para verificar se já está seguindo
+        Long followerEntityId = currentUser.getUserId();
+        Long targetEntityId = getEntityIdByUserId(targetUserId, request.getTargetUserType());
+        
         // Verificar se já está seguindo
-        if (isFollowing(currentUser.getUserId(), currentUser.getUserType(), request.getTargetUserId(), request.getTargetUserType())) {
+        if (isFollowing(followerEntityId, currentUser.getUserType(), targetEntityId, request.getTargetUserType())) {
             throw new RuntimeException("You are already following this user");
         }
         
         // Executar o seguimento baseado nos tipos
-        executeFollow(currentUser.getUserId(), currentUser.getUserType(), request.getTargetUserId(), request.getTargetUserType());
+        executeFollow(followerEntityId, currentUser.getUserType(), targetEntityId, request.getTargetUserType());
         
         return "Successfully followed user";
     }
@@ -54,13 +64,20 @@ public class FollowService {
     public String unfollowUser(FollowRequest request) {
         UserContextService.UserIdAndType currentUser = userContextService.getCurrentUserIdAndType();
         
+        // Converter String userId para Long
+        Long targetUserId = Long.parseLong(request.getTargetUserId());
+        
+        // Buscar entity IDs
+        Long followerEntityId = currentUser.getUserId();
+        Long targetEntityId = getEntityIdByUserId(targetUserId, request.getTargetUserType());
+        
         // Verificar se está seguindo
-        if (!isFollowing(currentUser.getUserId(), currentUser.getUserType(), request.getTargetUserId(), request.getTargetUserType())) {
+        if (!isFollowing(followerEntityId, currentUser.getUserType(), targetEntityId, request.getTargetUserType())) {
             throw new RuntimeException("You are not following this user");
         }
         
         // Executar o unfollow baseado nos tipos
-        executeUnfollow(currentUser.getUserId(), currentUser.getUserType(), request.getTargetUserId(), request.getTargetUserType());
+        executeUnfollow(followerEntityId, currentUser.getUserType(), targetEntityId, request.getTargetUserType());
         
         return "Successfully unfollowed user";
     }
@@ -76,7 +93,23 @@ public class FollowService {
                         return followerPlayer != null && targetPlayer != null && 
                                followerPlayer.getFollowing().contains(targetPlayer);
                     case ORGANIZATION:
-                        return playerRepository.isFollowingOrganization(followerId, targetId);
+                        // Check both followingOrganizations (correct) and favoriteOrganizations (legacy)
+                        // for backward compatibility with potentially inconsistent data
+                        Player player = playerRepository.findById(followerId).orElse(null);
+                        Organization org = organizationRepository.findById(targetId).orElse(null);
+                        
+                        if (player != null && org != null) {
+                            // First check the correct relationship
+                            boolean isFollowing = playerRepository.isFollowingOrganization(followerId, targetId);
+                            
+                            // If not found in followingOrganizations, check favoriteOrganizations for legacy data
+                            if (!isFollowing && player.getFavoriteOrganizations() != null) {
+                                isFollowing = player.getFavoriteOrganizations().contains(org);
+                            }
+                            
+                            return isFollowing;
+                        }
+                        return false;
                     case SPECTATOR:
                         return playerRepository.isFollowingSpectator(followerId, targetId);
                 }
@@ -109,105 +142,160 @@ public class FollowService {
     }
     
     public Page<FollowResponse> getFollowers(Long userId, UserType userType, Pageable pageable) {
+        List<FollowResponse> allFollowers = new ArrayList<>();
+        
         switch (userType) {
             case PLAYER:
-                // Buscar todos os tipos que seguem este player
-                Page<Player> playerFollowers = playerRepository.findFollowersByPlayerId(userId, pageable);
-                Page<Organization> orgFollowers = playerRepository.findOrganizationFollowersByPlayerId(userId, pageable);
-                Page<Spectator> spectatorFollowers = playerRepository.findSpectatorFollowersByPlayerId(userId, pageable);
+                // Buscar TODOS os tipos que seguem este player e combinar
+                List<Player> playerFollowers = playerRepository.findFollowersByPlayerId(userId, Pageable.unpaged()).getContent();
+                List<Organization> orgFollowers = playerRepository.findOrganizationFollowersByPlayerId(userId, Pageable.unpaged()).getContent();
+                List<Spectator> spectatorFollowers = playerRepository.findSpectatorFollowersByPlayerId(userId, Pageable.unpaged()).getContent();
                 
-                // Combinar e converter para FollowResponse
-                return playerFollowers.map(this::convertPlayerToFollowResponse);
+                allFollowers.addAll(playerFollowers.stream().map(this::convertPlayerToFollowResponse).collect(Collectors.toList()));
+                allFollowers.addAll(orgFollowers.stream().map(this::convertOrganizationToFollowResponse).collect(Collectors.toList()));
+                allFollowers.addAll(spectatorFollowers.stream().map(this::convertSpectatorToFollowResponse).collect(Collectors.toList()));
+                break;
                 
             case ORGANIZATION:
-                Page<Player> playerFollowersOrg = organizationRepository.findPlayerFollowersByOrganizationId(userId, pageable);
-                return playerFollowersOrg.map(this::convertPlayerToFollowResponse);
+                // Buscar TODOS os tipos que seguem esta organization e combinar
+                List<Player> playerFollowersOrg = organizationRepository.findPlayerFollowersByOrganizationId(userId, Pageable.unpaged()).getContent();
+                List<Organization> orgFollowersOrg = organizationRepository.findOrganizationFollowersByOrganizationId(userId, Pageable.unpaged()).getContent();
+                List<Spectator> spectatorFollowersOrg = organizationRepository.findSpectatorFollowersByOrganizationId(userId, Pageable.unpaged()).getContent();
+                
+                allFollowers.addAll(playerFollowersOrg.stream().map(this::convertPlayerToFollowResponse).collect(Collectors.toList()));
+                allFollowers.addAll(orgFollowersOrg.stream().map(this::convertOrganizationToFollowResponse).collect(Collectors.toList()));
+                allFollowers.addAll(spectatorFollowersOrg.stream().map(this::convertSpectatorToFollowResponse).collect(Collectors.toList()));
+                break;
                 
             case SPECTATOR:
-                Page<Spectator> spectatorFollowersSpec = spectatorRepository.findFollowersBySpectatorId(userId, pageable);
-                return spectatorFollowersSpec.map(this::convertSpectatorToFollowResponse);
+                // Buscar TODOS os tipos que seguem este spectator e combinar
+                List<Player> playerFollowersSpec = spectatorRepository.findPlayerFollowersBySpectatorId(userId, Pageable.unpaged()).getContent();
+                List<Organization> orgFollowersSpec = spectatorRepository.findOrganizationFollowersBySpectatorId(userId, Pageable.unpaged()).getContent();
+                List<Spectator> spectatorFollowersSpec = spectatorRepository.findFollowersBySpectatorId(userId, Pageable.unpaged()).getContent();
+                
+                allFollowers.addAll(playerFollowersSpec.stream().map(this::convertPlayerToFollowResponse).collect(Collectors.toList()));
+                allFollowers.addAll(orgFollowersSpec.stream().map(this::convertOrganizationToFollowResponse).collect(Collectors.toList()));
+                allFollowers.addAll(spectatorFollowersSpec.stream().map(this::convertSpectatorToFollowResponse).collect(Collectors.toList()));
+                break;
                 
             default:
                 throw new RuntimeException("Invalid user type");
         }
+        
+        // Aplicar paginação manualmente
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), allFollowers.size());
+        List<FollowResponse> pageContent = allFollowers.subList(start, end);
+        
+        return new PageImpl<>(pageContent, pageable, allFollowers.size());
     }
     
     public Page<FollowResponse> getFollowing(Long userId, UserType userType, Pageable pageable) {
+        List<FollowResponse> allFollowing = new ArrayList<>();
+        
         switch (userType) {
             case PLAYER:
-                // Para Player, buscar todos os tipos que ele segue
-                // Vamos tentar buscar cada tipo e retornar o primeiro que tem conteúdo
-                // Mas agora de forma mais robusta
+                // Buscar TODOS os tipos que este player segue e combinar
+                List<Player> followingPlayers = playerRepository.findFollowingByPlayerId(userId, Pageable.unpaged()).getContent();
+                List<Organization> followingOrgs = playerRepository.findFollowingOrganizationsByPlayerId(userId, Pageable.unpaged()).getContent();
+                List<Spectator> followingSpectators = playerRepository.findFollowingSpectatorsByPlayerId(userId, Pageable.unpaged()).getContent();
                 
-                // 1. Buscar players que ele segue
-                Page<Player> followingPlayers = playerRepository.findFollowingByPlayerId(userId, pageable);
-                if (followingPlayers.hasContent()) {
-                    return followingPlayers.map(this::convertPlayerToFollowResponse);
-                }
-                
-                // 2. Buscar organizações que ele segue
-                Page<Organization> followingOrgs = playerRepository.findFollowingOrganizationsByPlayerId(userId, pageable);
-                if (followingOrgs.hasContent()) {
-                    return followingOrgs.map(this::convertOrganizationToFollowResponse);
-                }
-                
-                // 3. Buscar spectators que ele segue
-                Page<Spectator> followingSpectators = playerRepository.findFollowingSpectatorsByPlayerId(userId, pageable);
-                return followingSpectators.map(this::convertSpectatorToFollowResponse);
+                allFollowing.addAll(followingPlayers.stream().map(this::convertPlayerToFollowResponse).collect(Collectors.toList()));
+                allFollowing.addAll(followingOrgs.stream().map(this::convertOrganizationToFollowResponse).collect(Collectors.toList()));
+                allFollowing.addAll(followingSpectators.stream().map(this::convertSpectatorToFollowResponse).collect(Collectors.toList()));
+                break;
                 
             case ORGANIZATION:
-                // Para Organization, buscar todos os tipos que ela segue
+                // Buscar TODOS os tipos que esta organization segue e combinar
+                List<Player> followingPlayersOrg = organizationRepository.findFollowingPlayersByOrganizationId(userId, Pageable.unpaged()).getContent();
+                List<Spectator> followingSpectatorsOrg = organizationRepository.findFollowingSpectatorsByOrganizationId(userId, Pageable.unpaged()).getContent();
+                List<Organization> followingOrganizations = organizationRepository.findFollowingOrganizationsByOrganizationId(userId, Pageable.unpaged()).getContent();
                 
-                // 1. Buscar players que ela segue
-                Page<Player> followingPlayersOrg = organizationRepository.findFollowingPlayersByOrganizationId(userId, pageable);
-                if (followingPlayersOrg.hasContent()) {
-                    return followingPlayersOrg.map(this::convertPlayerToFollowResponse);
-                }
-                
-                // 2. Buscar spectators que ela segue
-                Page<Spectator> followingSpectatorsOrg = organizationRepository.findFollowingSpectatorsByOrganizationId(userId, pageable);
-                if (followingSpectatorsOrg.hasContent()) {
-                    return followingSpectatorsOrg.map(this::convertSpectatorToFollowResponse);
-                }
-                
-                // 3. Buscar outras organizações que ela segue
-                Page<Organization> followingOrganizations = organizationRepository.findFollowingOrganizationsByOrganizationId(userId, pageable);
-                return followingOrganizations.map(this::convertOrganizationToFollowResponse);
+                allFollowing.addAll(followingPlayersOrg.stream().map(this::convertPlayerToFollowResponse).collect(Collectors.toList()));
+                allFollowing.addAll(followingSpectatorsOrg.stream().map(this::convertSpectatorToFollowResponse).collect(Collectors.toList()));
+                allFollowing.addAll(followingOrganizations.stream().map(this::convertOrganizationToFollowResponse).collect(Collectors.toList()));
+                break;
                 
             case SPECTATOR:
-                // Para Spectator, buscar todos os tipos que ele segue
+                // Buscar TODOS os tipos que este spectator segue e combinar
+                List<Player> followingPlayersSpec = spectatorRepository.findFollowingPlayersBySpectatorId(userId, Pageable.unpaged()).getContent();
+                List<Organization> followingOrgsSpec = spectatorRepository.findFollowingOrganizationsBySpectatorId(userId, Pageable.unpaged()).getContent();
+                List<Spectator> followingSpectatorsSpec = spectatorRepository.findFollowingBySpectatorId(userId, Pageable.unpaged()).getContent();
                 
-                // 1. Buscar players que ele segue
-                Page<Player> followingPlayersSpec = spectatorRepository.findFollowingPlayersBySpectatorId(userId, pageable);
-                if (followingPlayersSpec.hasContent()) {
-                    return followingPlayersSpec.map(this::convertPlayerToFollowResponse);
-                }
+                allFollowing.addAll(followingPlayersSpec.stream().map(this::convertPlayerToFollowResponse).collect(Collectors.toList()));
+                allFollowing.addAll(followingOrgsSpec.stream().map(this::convertOrganizationToFollowResponse).collect(Collectors.toList()));
+                allFollowing.addAll(followingSpectatorsSpec.stream().map(this::convertSpectatorToFollowResponse).collect(Collectors.toList()));
+                break;
                 
-                // 2. Buscar organizações que ele segue
-                Page<Organization> followingOrgsSpec = spectatorRepository.findFollowingOrganizationsBySpectatorId(userId, pageable);
-                if (followingOrgsSpec.hasContent()) {
-                    return followingOrgsSpec.map(this::convertOrganizationToFollowResponse);
-                }
-                
-                // 3. Buscar outros spectators que ele segue
-                Page<Spectator> followingSpectatorsSpec = spectatorRepository.findFollowingBySpectatorId(userId, pageable);
-                return followingSpectatorsSpec.map(this::convertSpectatorToFollowResponse);
-                
+            default:
+                throw new RuntimeException("Invalid user type");
+        }
+        
+        // Aplicar paginação manualmente
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), allFollowing.size());
+        List<FollowResponse> pageContent = allFollowing.subList(start, end);
+        
+        return new PageImpl<>(pageContent, pageable, allFollowing.size());
+    }
+    
+    /**
+     * Verifica se um usuário existe pelo userId global
+     */
+    public boolean userExistsByUserId(Long userId, UserType userType) {
+        switch (userType) {
+            case PLAYER:
+                return playerRepository.existsByUserId(userId);
+            case ORGANIZATION:
+                return organizationRepository.existsByUserId(userId);
+            case SPECTATOR:
+                return spectatorRepository.existsByUserId(userId);
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Busca o ID da entidade (id) pelo userId global
+     */
+    public Long getEntityIdByUserId(Long userId, UserType userType) {
+        switch (userType) {
+            case PLAYER:
+                return playerRepository.findByUserId(userId)
+                    .map(Player::getId)
+                    .orElseThrow(() -> new RuntimeException("Player not found with userId: " + userId));
+            case ORGANIZATION:
+                return organizationRepository.findByUserId(userId)
+                    .map(Organization::getId)
+                    .orElseThrow(() -> new RuntimeException("Organization not found with userId: " + userId));
+            case SPECTATOR:
+                return spectatorRepository.findByUserId(userId)
+                    .map(Spectator::getId)
+                    .orElseThrow(() -> new RuntimeException("Spectator not found with userId: " + userId));
             default:
                 throw new RuntimeException("Invalid user type");
         }
     }
     
-    private boolean userExists(Long userId, UserType userType) {
+    /**
+     * Busca o userId global do usuário atual
+     */
+    private Long getCurrentEntityUserId(Long entityId, UserType userType) {
         switch (userType) {
             case PLAYER:
-                return playerRepository.existsById(userId);
+                return playerRepository.findById(entityId)
+                    .map(Player::getUserId)
+                    .orElseThrow(() -> new RuntimeException("Player not found"));
             case ORGANIZATION:
-                return organizationRepository.existsById(userId);
+                return organizationRepository.findById(entityId)
+                    .map(Organization::getUserId)
+                    .orElseThrow(() -> new RuntimeException("Organization not found"));
             case SPECTATOR:
-                return spectatorRepository.existsById(userId);
+                return spectatorRepository.findById(entityId)
+                    .map(Spectator::getUserId)
+                    .orElseThrow(() -> new RuntimeException("Spectator not found"));
             default:
-                return false;
+                throw new RuntimeException("Invalid user type");
         }
     }
     
@@ -229,7 +317,7 @@ public class FollowService {
                     case ORGANIZATION:
                         Organization targetOrg = organizationRepository.findById(targetId)
                             .orElseThrow(() -> new RuntimeException("Target organization not found"));
-                        followerPlayer.getFavoriteOrganizations().add(targetOrg);
+                        followerPlayer.getFollowingOrganizations().add(targetOrg);
                         targetOrg.getPlayerFollowers().add(followerPlayer);
                         playerRepository.save(followerPlayer);
                         organizationRepository.save(targetOrg);
@@ -283,28 +371,58 @@ public class FollowService {
                 
                 switch (targetType) {
                     case PLAYER:
-                        Player targetPlayer = playerRepository.findById(targetId)
-                            .orElseThrow(() -> new RuntimeException("Target player not found"));
-                        followerSpectator.getFollowingPlayers().add(targetPlayer);
-                        targetPlayer.getSpectatorFollowers().add(followerSpectator);
-                        spectatorRepository.save(followerSpectator);
-                        playerRepository.save(targetPlayer);
+                        try {
+                            Player targetPlayer = playerRepository.findById(targetId)
+                                .orElseThrow(() -> new RuntimeException("Target player not found"));
+                            
+                            // Check if the relationship already exists to prevent duplicates
+                            if (followerSpectator.getFollowingPlayers().contains(targetPlayer)) {
+                                throw new RuntimeException("Already following this player");
+                            }
+                            
+                            followerSpectator.getFollowingPlayers().add(targetPlayer);
+                            targetPlayer.getSpectatorFollowers().add(followerSpectator);
+                            spectatorRepository.save(followerSpectator);
+                            playerRepository.save(targetPlayer);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to follow player: " + e.getMessage(), e);
+                        }
                         break;
                     case ORGANIZATION:
-                        Organization targetOrg = organizationRepository.findById(targetId)
-                            .orElseThrow(() -> new RuntimeException("Target organization not found"));
-                        followerSpectator.getFollowingOrganizations().add(targetOrg);
-                        targetOrg.getSpectatorFollowers().add(followerSpectator);
-                        spectatorRepository.save(followerSpectator);
-                        organizationRepository.save(targetOrg);
+                        try {
+                            Organization targetOrg = organizationRepository.findById(targetId)
+                                .orElseThrow(() -> new RuntimeException("Target organization not found"));
+                            
+                            // Check if the relationship already exists to prevent duplicates
+                            if (followerSpectator.getFollowingOrganizations().contains(targetOrg)) {
+                                throw new RuntimeException("Already following this organization");
+                            }
+                            
+                            followerSpectator.getFollowingOrganizations().add(targetOrg);
+                            targetOrg.getSpectatorFollowers().add(followerSpectator);
+                            spectatorRepository.save(followerSpectator);
+                            organizationRepository.save(targetOrg);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to follow organization: " + e.getMessage(), e);
+                        }
                         break;
                     case SPECTATOR:
-                        Spectator targetSpectator = spectatorRepository.findById(targetId)
-                            .orElseThrow(() -> new RuntimeException("Target spectator not found"));
-                        followerSpectator.getFollowing().add(targetSpectator);
-                        targetSpectator.getFollowers().add(followerSpectator);
-                        spectatorRepository.save(followerSpectator);
-                        spectatorRepository.save(targetSpectator);
+                        try {
+                            Spectator targetSpectator = spectatorRepository.findById(targetId)
+                                .orElseThrow(() -> new RuntimeException("Target spectator not found"));
+                            
+                            // Check if the relationship already exists to prevent duplicates
+                            if (followerSpectator.getFollowing().contains(targetSpectator)) {
+                                throw new RuntimeException("Already following this spectator");
+                            }
+                            
+                            followerSpectator.getFollowing().add(targetSpectator);
+                            targetSpectator.getFollowers().add(followerSpectator);
+                            spectatorRepository.save(followerSpectator);
+                            spectatorRepository.save(targetSpectator);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to follow spectator: " + e.getMessage(), e);
+                        }
                         break;
                 }
                 break;
@@ -329,7 +447,7 @@ public class FollowService {
                     case ORGANIZATION:
                         Organization targetOrg = organizationRepository.findById(targetId)
                             .orElseThrow(() -> new RuntimeException("Target organization not found"));
-                        followerPlayer.getFavoriteOrganizations().remove(targetOrg);
+                        followerPlayer.getFollowingOrganizations().remove(targetOrg);
                         targetOrg.getPlayerFollowers().remove(followerPlayer);
                         playerRepository.save(followerPlayer);
                         organizationRepository.save(targetOrg);
@@ -413,7 +531,8 @@ public class FollowService {
     
     private FollowResponse convertPlayerToFollowResponse(Player player) {
         FollowResponse response = new FollowResponse();
-        response.setId(player.getId());
+        response.setId(player.getId());  // Convert Long to String
+        response.setUserId(String.valueOf(player.getUserId()));
         response.setUsername(player.getRealUsername());
         response.setName(player.getName());
         response.setEmail(player.getEmail());
@@ -437,7 +556,8 @@ public class FollowService {
     
     private FollowResponse convertOrganizationToFollowResponse(Organization organization) {
         FollowResponse response = new FollowResponse();
-        response.setId(organization.getId());
+        response.setId(organization.getId());  // Convert Long to String
+        response.setUserId(String.valueOf(organization.getUserId()));
         response.setUsername(organization.getRealUsername());
         response.setName(organization.getName());
         response.setEmail(organization.getEmail());
@@ -458,7 +578,8 @@ public class FollowService {
     
     private FollowResponse convertSpectatorToFollowResponse(Spectator spectator) {
         FollowResponse response = new FollowResponse();
-        response.setId(spectator.getId());
+        response.setId(spectator.getId());  // Convert Long to String
+        response.setUserId(String.valueOf(spectator.getUserId()));
         response.setUsername(spectator.getRealUsername());
         response.setName(spectator.getName());
         response.setEmail(spectator.getEmail());

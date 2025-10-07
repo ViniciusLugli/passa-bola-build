@@ -15,7 +15,7 @@ export const useCreateTeamForm = () => {
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [mutualFollows, setMutualFollows] = useState([]);
-  const [selectedPlayers, setSelectedPlayers] = useState([]); // { id, username, status: 'pending' | 'accepted' | 'rejected' }
+  const [selectedPlayers, setSelectedPlayers] = useState([]);
 
   const fetchFollowData = useCallback(async () => {
     if (!user) return;
@@ -35,7 +35,39 @@ export const useCreateTeamForm = () => {
       const mutual = myFollowers.filter((follower) =>
         myFollowing.some((f) => f.targetUserId === follower.followerId)
       );
-      setMutualFollows(mutual);
+
+      const normalize = (p) => {
+        const id =
+          p?.followerId ??
+          p?.id ??
+          p?.targetUserId ??
+          p?.follower?.id ??
+          p?.targetId ??
+          null;
+        const username =
+          p?.followerUsername ??
+          p?.username ??
+          p?.targetUsername ??
+          p?.follower?.username ??
+          p?.targetUserUsername ??
+          null;
+        const profilePhoto =
+          p?.profilePhoto ??
+          p?.follower?.profilePhotoUrl ??
+          p?.profilePhotoUrl ??
+          null;
+        return { id, username, profilePhoto };
+      };
+
+      const normalizedMutual = mutual.map(normalize);
+
+      const uniqueMutual = normalizedMutual.filter((player, index, self) => {
+        if (!player.id || !player.username) return false;
+        return index === self.findIndex((p) => p.id === player.id);
+      });
+
+      console.log("Seguidores mútuos encontrados:", uniqueMutual.length);
+      setMutualFollows(uniqueMutual);
     } catch (err) {
       console.error("Erro ao buscar dados de seguidores:", err);
       setError("Falha ao carregar seguidores e seguidos.");
@@ -77,11 +109,22 @@ export const useCreateTeamForm = () => {
       return;
     }
 
+    if (selectedPlayers.length === 0) {
+      setError(
+        "Você precisa convidar pelo menos 1 jogadora para criar um time."
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       const teamResponse = await api.teams.create({ nameTeam: teamName });
-      const teamId = teamResponse.id;
+      const teamId = teamResponse?.id ?? teamResponse?.content?.id;
+      if (!teamId) {
+        console.warn("Resposta inesperada ao criar time:", teamResponse);
+        throw new Error("Id do time não encontrado na resposta do servidor.");
+      }
 
-      // Enviar convites para os jogadores selecionados
       for (const player of selectedPlayers) {
         await api.teams.sendInvite(teamId, player.id);
       }

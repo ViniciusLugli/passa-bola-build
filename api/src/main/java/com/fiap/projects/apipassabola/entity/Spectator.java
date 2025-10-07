@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,11 +21,25 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude = {
+    "followers",
+    "following",
+    "followingPlayers",
+    "followingOrganizations",
+    "playerFollowers",
+    "organizationFollowers",
+    "subscribedGames",
+    "posts"
+})
 public class Spectator implements UserDetails {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    // Global unique user ID across all user types
+    @Column(name = "user_id", unique = true, nullable = false)
+    private Long userId;
     
     // User fields flattened
     @Enumerated(EnumType.STRING)
@@ -133,11 +148,21 @@ public class Spectator implements UserDetails {
     // Helper methods
     
     public int getFollowersCount() {
-        return followers != null ? followers.size() : 0;
+        int count = 0;
+        // Count all types of followers
+        count += (followers != null ? followers.size() : 0);  // Spectators following
+        count += (playerFollowers != null ? playerFollowers.size() : 0);  // Players following
+        count += (organizationFollowers != null ? organizationFollowers.size() : 0);  // Organizations following
+        return count;
     }
     
     public int getFollowingCount() {
-        return following != null ? following.size() : 0;
+        int count = 0;
+        // Count all types being followed
+        count += (following != null ? following.size() : 0);  // Spectators being followed
+        count += (followingPlayers != null ? followingPlayers.size() : 0);  // Players being followed
+        count += (followingOrganizations != null ? followingOrganizations.size() : 0);  // Organizations being followed
+        return count;
     }
     
     // Method to get the real username field (not email)

@@ -1,4 +1,4 @@
-// app/lib/routes/gameInvitesRoutes.js
+
 const createGameInvitesRoutes = (fetchApi) => ({
   send: (data) =>
     fetchApi("/game-invites/send", { method: "POST", body: data }),

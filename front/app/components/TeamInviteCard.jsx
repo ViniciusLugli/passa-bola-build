@@ -12,8 +12,15 @@ export default function TeamInviteCard({ invite, onUpdate }) {
     setLoading(true);
     setError(null);
     try {
-      await api.teams.acceptInvite(invite.id);
-      onUpdate(); // Notifica o componente pai para recarregar os convites
+      const inviteId = invite?.id ?? invite?.inviteId ?? invite?.invite?.id;
+      if (!inviteId) throw new Error("Invite id ausente na requisição.");
+      await api.teams.acceptInvite(inviteId);
+      onUpdate();
+      try {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("teams:changed"));
+        }
+      } catch (e) {}
     } catch (err) {
       setError(err.message || "Falha ao aceitar convite.");
     } finally {
@@ -25,8 +32,15 @@ export default function TeamInviteCard({ invite, onUpdate }) {
     setLoading(true);
     setError(null);
     try {
-      await api.teams.rejectInvite(invite.id);
+      const inviteId = invite?.id ?? invite?.inviteId ?? invite?.invite?.id;
+      if (!inviteId) throw new Error("Invite id ausente na requisição.");
+      await api.teams.rejectInvite(inviteId);
       onUpdate();
+      try {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("teams:changed"));
+        }
+      } catch (e) {}
     } catch (err) {
       setError(err.message || "Falha ao rejeitar convite.");
     } finally {
@@ -37,13 +51,19 @@ export default function TeamInviteCard({ invite, onUpdate }) {
   return (
     <div className="bg-white shadow-md rounded-lg p-4 mb-4">
       <h3 className="text-lg font-semibold text-gray-800">
-        Convite para o Time: {invite.teamName}
+        Convite para o Time:{" "}
+        {invite?.teamName ?? invite?.team?.name ?? "(time)"}
       </h3>
       <p className="text-gray-600">
-        Enviado por: {invite.senderUsername} em{" "}
-        {new Date(invite.createdAt).toLocaleDateString()}
+        Enviado por:{" "}
+        {invite?.senderUsername ?? invite?.sender?.username ?? "(remetente)"} em{" "}
+        {invite?.createdAt
+          ? new Date(invite.createdAt).toLocaleDateString()
+          : "(data)"}
       </p>
-      <p className="text-gray-600">Status: {invite.status}</p>
+      <p className="text-gray-600">
+        Status: {invite?.status ?? invite?.inviteStatus ?? "(status)"}
+      </p>
 
       {invite.status === "PENDING" && (
         <div className="mt-4 flex space-x-4">

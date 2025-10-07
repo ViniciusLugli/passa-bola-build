@@ -6,7 +6,7 @@ import Header from "@/app/components/Header";
 import Image from "next/image";
 import { useAuth } from "@/app/context/AuthContext";
 import { api } from "@/app/lib/api";
-import Input from "@/app/components/Input"; // Importar o componente Input
+import Input from "@/app/components/Input";
 
 function NewPost() {
   const router = useRouter();

@@ -1,8 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 
-export default function Alert({ isOpen, onClose, message, type = "error" }) {
+export default function Alert({
+  isOpen: isOpenProp,
+  onClose,
+  message,
+  type = "error",
+  duration = 3000,
+}) {
+  const [isOpen, setIsOpen] = useState(Boolean(isOpenProp));
+
+  useEffect(() => {
+    setIsOpen(Boolean(isOpenProp));
+  }, [isOpenProp]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const t = setTimeout(() => {
+      setIsOpen(false);
+      if (typeof onClose === "function") onClose();
+    }, duration);
+    return () => clearTimeout(t);
+  }, [isOpen, duration, onClose]);
+
   if (!isOpen) return null;
 
   const alertStyles = {

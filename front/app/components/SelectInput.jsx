@@ -1,18 +1,49 @@
 "use client";
 
-import { useState, memo } from "react";
+import { useState, memo, useRef, useEffect } from "react";
 
-const SelectInput = ({ label, name, options, value, onChange }) => {
+const SelectInput = ({
+  label,
+  name,
+  options,
+  value,
+  onChange,
+  required = false,
+  placeholder = "Selecione uma opção",
+}) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const searchInputRef = useRef(null);
 
+  const defaultLabel = required ? `${placeholder} *` : placeholder;
   const selectedOption = options.find((opt) => opt.value === value) || {
-    label: "Selecione o tipo",
+    label: defaultLabel,
     value: "",
   };
+
+  // Filtra opções baseado no termo de busca
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Foca no input de busca quando abre o dropdown
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isOpen]);
 
   const handleSelect = (option) => {
     onChange({ target: { name: name, value: option.value } });
     setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+    if (isOpen) {
+      setSearchTerm("");
+    }
   };
 
   return (
@@ -38,7 +69,7 @@ const SelectInput = ({ label, name, options, value, onChange }) => {
           duration-200
           hover:border-purple-500
         "
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
       >
         <span>{selectedOption.label}</span>
         <svg
@@ -76,27 +107,60 @@ const SelectInput = ({ label, name, options, value, onChange }) => {
           rounded-xl 
           shadow-lg 
           z-20
-          overflow-y-auto
           max-h-60
+          flex
+          flex-col
         "
         >
-          {options.map((option) => (
-            <div
-              key={option.value}
+          {/* Barra de busca */}
+          <div className="p-3 border-b border-gray-200 sticky top-0 bg-white rounded-t-xl">
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              placeholder="Buscar..."
               className="
-                p-4 sm:p-5 
-                text-lg sm:text-xl 
-                text-gray-800
-                cursor-pointer 
-                hover:bg-gray-100 
-                transition-colors 
-                duration-200
+                w-full 
+                p-2 sm:p-3
+                text-base sm:text-lg
+                border 
+                border-gray-300 
+                rounded-lg 
+                focus:outline-none 
+                focus:border-purple-500
+                transition-colors
               "
-              onClick={() => handleSelect(option)}
-            >
-              {option.label}
-            </div>
-          ))}
+            />
+          </div>
+
+          {/* Lista de opções filtradas */}
+          <div className="overflow-y-auto max-h-48">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <div
+                  key={option.value}
+                  className="
+                    p-4 sm:p-5 
+                    text-lg sm:text-xl 
+                    text-gray-800
+                    cursor-pointer 
+                    hover:bg-gray-100 
+                    transition-colors 
+                    duration-200
+                  "
+                  onClick={() => handleSelect(option)}
+                >
+                  {option.label}
+                </div>
+              ))
+            ) : (
+              <div className="p-4 sm:p-5 text-lg sm:text-xl text-gray-500 text-center">
+                Nenhum resultado encontrado
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

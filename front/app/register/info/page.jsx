@@ -14,6 +14,7 @@ function RegisterForm() {
     error,
     loading,
     formData,
+    passwordError,
     isOrganization,
     step1Fields,
     step2Fields,
@@ -51,6 +52,14 @@ function RegisterForm() {
             >
               <strong className="font-bold">Oops! </strong>
               <span className="block sm:inline">{error}</span>
+            </div>
+          )}
+          {passwordError && currentStep === 1 && (
+            <div
+              className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative"
+              role="alert"
+            >
+              <span className="block sm:inline">{passwordError}</span>
             </div>
           )}
           {isOrganization ? (

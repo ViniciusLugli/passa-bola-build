@@ -3,7 +3,8 @@ export default class TeamInvite {
     this.id = id;
     this.teamId = teamId;
     this.invitedPlayerId = invitedPlayerId;
-    this.status = status; // PENDING, ACCEPTED, REJECTED, CANCELLED
+    this.status = status;
+    this.status = status;
     this.senderId = senderId;
     this.createdAt = createdAt;
   }

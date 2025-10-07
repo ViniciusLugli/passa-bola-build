@@ -5,9 +5,11 @@ const createTeamRoutes = (fetchApi) => ({
     size = 10,
     sortBy = "createdAt",
     sortDir = "desc",
+    options = {},
   } = {}) =>
     fetchApi(
-      `/teams?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`
+      `/teams?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`,
+      options
     ),
   getById: (id) => fetchApi(`/teams/${id}`),
   search: (name, { page = 0, size = 10 } = {}) =>

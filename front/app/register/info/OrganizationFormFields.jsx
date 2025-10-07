@@ -23,6 +23,7 @@ export default function OrganizationFormFields({
           value={formData[field.name]}
           onChange={handleInputChange}
           disabled={loading}
+          required={field.required}
           options={brazilianStates.map((state) => ({
             value: state.uf,
             label: state.nome,
@@ -36,6 +37,7 @@ export default function OrganizationFormFields({
           value={formData[field.name]}
           onChange={handleInputChange}
           disabled={loading}
+          required={field.required}
         />
       )}
     </div>

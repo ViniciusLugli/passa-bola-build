@@ -11,14 +11,48 @@ function Games() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user: loggedInUser } = useAuth();
+  const { user: loggedInUser, isAuthenticated } = useAuth();
 
   const fetchGames = async () => {
     try {
       setLoading(true);
+      setError(null);
+
       const response = await api.games.getAll();
-      setGames(response.content || []);
+      let fetchedGames = response.content || [];
+
+      // Se o usuário está logado, verificar em quais jogos ele está inscrito
+      if (isAuthenticated && loggedInUser) {
+        try {
+          const participationsResponse =
+            await api.gameParticipants.getMyParticipations({
+              page: 0,
+              size: 100,
+            });
+          const myParticipations = participationsResponse.content || [];
+
+          // Criar um Set com os IDs dos jogos em que estou inscrito
+          const joinedGameIds = new Set(
+            myParticipations.map((p) => p.gameId || p.game?.id).filter(Boolean)
+          );
+
+          // Marcar cada jogo com isJoined
+          fetchedGames = fetchedGames.map((game) => {
+            const isJoined = joinedGameIds.has(game.id);
+            return {
+              ...game,
+              isJoined,
+            };
+          });
+        } catch (participationError) {
+          console.error("Erro ao buscar participações:", participationError);
+          // Continua sem marcar jogos como joined
+        }
+      }
+
+      setGames(fetchedGames);
     } catch (err) {
+      console.error("Erro ao buscar jogos:", err);
       setError(err.message || "Falha ao carregar os jogos.");
     } finally {
       setLoading(false);
@@ -26,15 +60,17 @@ function Games() {
   };
 
   useEffect(() => {
-    fetchGames();
-  }, []);
+    if (isAuthenticated) {
+      fetchGames();
+    }
+  }, [isAuthenticated]);
 
   const handleGameUpdate = () => {
     fetchGames();
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="transparent min-h-screen">
       <Header />
       <main
         className="
@@ -44,39 +80,41 @@ function Games() {
         max-w-4xl
       "
       >
-        <h1
-          className="
-          text-4xl 
-          font-extrabold 
-          text-gray-900 
-          leading-tight
-          mb-8
-          text-center
-        "
-        >
-          Jogos
-        </h1>
+        <div className="bg-white border border-zinc-300 rounded-lg shadow-xl p-6 md:p-8">
+          <h1
+            className="
+            text-4xl 
+            font-extrabold 
+            text-gray-900 
+            leading-tight
+            mb-8
+            text-center
+          "
+          >
+            Jogos
+          </h1>
 
-        {loading && <p className="text-center">Carregando jogos...</p>}
-        {error && <p className="text-center text-red-500">{error}</p>}
+          {loading && <p className="text-center">Carregando jogos...</p>}
+          {error && <p className="text-center text-red-500">{error}</p>}
 
-        {!loading && !error && (
-          <section className="flex flex-col gap-6">
-            {games.length > 0 ? (
-              games.map((game) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  onGameUpdate={handleGameUpdate}
-                />
-              ))
-            ) : (
-              <p className="text-center text-gray-500">
-                Nenhum jogo encontrado.
-              </p>
-            )}
-          </section>
-        )}
+          {!loading && !error && (
+            <section className="flex flex-col gap-6">
+              {games.length > 0 ? (
+                games.map((game) => (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    onGameUpdate={handleGameUpdate}
+                  />
+                ))
+              ) : (
+                <p className="text-center text-gray-500">
+                  Nenhum jogo encontrado.
+                </p>
+              )}
+            </section>
+          )}
+        </div>
       </main>
 
       <Link

@@ -15,13 +15,13 @@ export default function ProfileHeader({ user, loggedInUser, onFollowChange }) {
 
   useEffect(() => {
     const checkFollowingStatus = async () => {
-      if (loggedInUser && loggedInUser.id !== user.id) {
+      if (loggedInUser && user.userId && loggedInUser.userId !== user.userId) {
         try {
           const response = await api.follow.checkFollowing(
-            user.id,
-            user.userType
+            user.userId,
+            user.userType.toUpperCase()
           );
-          setIsFollowing(response); // A API retorna true/false diretamente
+          setIsFollowing(response);
         } catch (error) {
           console.error("Erro ao verificar status de seguimento:", error);
           setIsFollowing(false);
@@ -38,7 +38,7 @@ export default function ProfileHeader({ user, loggedInUser, onFollowChange }) {
 
   const handleFollow = async () => {
     try {
-      await api.follow.follow(user.id, user.userType.toUpperCase()); // Corrigido para maiúsculas
+      await api.follow.follow(user.userId, user.userType.toUpperCase());
       setIsFollowing(true);
       setFollowersCount((prev) => prev + 1);
       if (onFollowChange) {
@@ -46,14 +46,12 @@ export default function ProfileHeader({ user, loggedInUser, onFollowChange }) {
       }
     } catch (error) {
       console.error("Erro ao seguir usuário:", error);
-      // Não reverter o estado aqui, pois a API já rejeitou a promessa
-      // A página pai (page.jsx) deve re-buscar os dados para sincronizar
     }
   };
 
   const handleUnfollow = async () => {
     try {
-      await api.follow.unfollow(user.id, user.userType.toUpperCase()); // Corrigido para maiúsculas
+      await api.follow.unfollow(user.userId, user.userType.toUpperCase());
       setIsFollowing(false);
       setFollowersCount((prev) => prev - 1);
       if (onFollowChange) {
@@ -61,13 +59,11 @@ export default function ProfileHeader({ user, loggedInUser, onFollowChange }) {
       }
     } catch (error) {
       console.error("Erro ao deixar de seguir usuário:", error);
-      // Não reverter o estado aqui, pois a API já rejeitou a promessa
-      // A página pai (page.jsx) deve re-buscar os dados para sincronizar
     }
   };
 
   return (
-    <div className="w-full bg-white rounded-b-2xl shadow-xl overflow-hidden relative">
+    <div className="w-full bg-white rounded-2xl border border-zinc-400 shadow-xl overflow-hidden relative">
       <div className="relative w-full h-40 md:h-64">
         <Image
           src={user.bannerUrl || "/icons/banner-default.jpeg"}
@@ -100,7 +96,9 @@ export default function ProfileHeader({ user, loggedInUser, onFollowChange }) {
               sizes="(max-width: 768px) 24vw, 15vw"
             />
           </div>
-          {loggedInUser && loggedInUser.id === user.id ? (
+          {loggedInUser &&
+          loggedInUser.userId === user.userId &&
+          loggedInUser.userType === user.userType ? (
             <Link
               href={`/user/${user.userType.toLowerCase()}/${user.id}/config`}
               passHref
@@ -114,7 +112,9 @@ export default function ProfileHeader({ user, loggedInUser, onFollowChange }) {
               </button>
             </Link>
           ) : (
-            loggedInUser && ( // Só mostra o botão se houver um usuário logado e não for o próprio perfil
+            loggedInUser &&
+            user.userId &&
+            loggedInUser.userId !== user.userId && (
               <button
                 onClick={isFollowing ? handleUnfollow : handleFollow}
                 className={`

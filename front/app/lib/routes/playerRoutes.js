@@ -1,4 +1,3 @@
-// app/lib/routes/playerRoutes.js
 const createPlayerRoutes = (fetchApi, fetchApiFormData) => ({
   getAll: ({ page = 0, size = 20 } = {}) =>
     fetchApi(`/players?page=${page}&size=${size}`),

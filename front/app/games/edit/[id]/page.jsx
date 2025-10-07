@@ -23,6 +23,8 @@ export default function EditGamePage() {
     isGameCreator,
     showDeleteModal,
     setShowDeleteModal,
+    teams,
+    loadingTeams,
   } = useEditGameForm(id);
 
   if (loading) {
@@ -147,6 +149,8 @@ export default function EditGamePage() {
             gameTypeOptions={gameTypeOptions}
             handleDeleteGame={handleDeleteGame}
             setShowDeleteModal={setShowDeleteModal}
+            teams={teams}
+            loadingTeams={loadingTeams}
           />
         </div>
       </main>

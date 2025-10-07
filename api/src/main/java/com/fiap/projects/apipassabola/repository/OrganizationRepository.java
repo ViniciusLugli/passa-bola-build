@@ -13,6 +13,10 @@ import java.util.Optional;
 @Repository
 public interface OrganizationRepository extends JpaRepository<Organization, Long> {
     
+    boolean existsByUserId(Long userId);
+    
+    Optional<Organization> findByUserId(Long userId);
+    
     Optional<Organization> findByUsername(String username);
     
     Optional<Organization> findByEmail(String email);
@@ -49,6 +53,10 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
     // Organization-to-Organization following queries (existing)
     @Query("SELECT o FROM Organization org JOIN org.followers o WHERE org.id = :organizationId")
     Page<Organization> findFollowersByOrganizationId(@Param("organizationId") Long organizationId, Pageable pageable);
+    
+    // Alias method for consistency - Organization followers from other Organizations
+    @Query("SELECT o FROM Organization org JOIN org.followers o WHERE org.id = :organizationId")
+    Page<Organization> findOrganizationFollowersByOrganizationId(@Param("organizationId") Long organizationId, Pageable pageable);
     
     @Query("SELECT o FROM Organization org JOIN org.following o WHERE org.id = :organizationId")
     Page<Organization> findFollowingByOrganizationId(@Param("organizationId") Long organizationId, Pageable pageable);

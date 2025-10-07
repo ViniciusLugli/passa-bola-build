@@ -21,6 +21,9 @@ export const useEditGameForm = (gameId) => {
     homeTeamId: "",
     awayTeamId: "",
     description: "",
+    hasSpectators: false,
+    minPlayers: 6,
+    maxPlayers: 22,
   });
 
   const [alert, setAlert] = useState(null);
@@ -28,6 +31,8 @@ export const useEditGameForm = (gameId) => {
   const [submitting, setSubmitting] = useState(false);
   const [gameData, setGameData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [teams, setTeams] = useState([]);
+  const [loadingTeams, setLoadingTeams] = useState(false);
 
   const gameTypeOptions = [
     { label: getGameTypeLabel("FRIENDLY"), value: "FRIENDLY" },
@@ -52,6 +57,9 @@ export const useEditGameForm = (gameId) => {
         homeTeamId: response.homeTeamId || "",
         awayTeamId: response.awayTeamId || "",
         description: response.description || "",
+        hasSpectators: response.hasSpectators || false,
+        minPlayers: response.minPlayers || 6,
+        maxPlayers: response.maxPlayers || 22,
       });
     } catch (err) {
       setAlert({
@@ -67,6 +75,26 @@ export const useEditGameForm = (gameId) => {
     fetchGame();
   }, [fetchGame]);
 
+  // Buscar equipes quando o tipo de jogo for CUP
+  useEffect(() => {
+    if (gameData && gameData.gameType === "CUP") {
+      fetchTeams();
+    }
+  }, [gameData]);
+
+  const fetchTeams = async () => {
+    try {
+      setLoadingTeams(true);
+      const response = await api.teams.getAll({ page: 0, size: 1000 });
+      const allTeams = response.content || response.teams || response || [];
+      setTeams(Array.isArray(allTeams) ? allTeams : []);
+    } catch (err) {
+      console.error("Erro ao buscar equipes:", err);
+    } finally {
+      setLoadingTeams(false);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
@@ -77,7 +105,11 @@ export const useEditGameForm = (gameId) => {
     setSubmitting(true);
     setAlert(null);
 
-    if (!user || !gameData || user.userId !== gameData.hostId) {
+    if (
+      !user ||
+      !gameData ||
+      String(user.id || user.playerId) !== String(gameData.hostId)
+    ) {
       setAlert({
         type: "error",
         message: "Você não tem permissão para editar este jogo.",
@@ -97,6 +129,9 @@ export const useEditGameForm = (gameId) => {
       homeTeamId,
       awayTeamId,
       description,
+      hasSpectators,
+      minPlayers,
+      maxPlayers,
     } = formData;
     const fullGameDate = `${gameDate}T${gameTime}:00`;
 
@@ -122,10 +157,16 @@ export const useEditGameForm = (gameId) => {
       case "FRIENDLY":
         apiCall = api.games.updateFriendly;
         specificPayload.gameName = gameName;
+        specificPayload.hasSpectators = hasSpectators;
+        specificPayload.minPlayers = parseInt(minPlayers);
+        specificPayload.maxPlayers = parseInt(maxPlayers);
         break;
       case "CHAMPIONSHIP":
         apiCall = api.games.updateChampionship;
         specificPayload.gameName = gameName;
+        specificPayload.hasSpectators = hasSpectators;
+        specificPayload.minPlayers = parseInt(minPlayers);
+        specificPayload.maxPlayers = parseInt(maxPlayers);
         break;
       case "CUP":
         apiCall = api.games.updateCup;
@@ -175,7 +216,10 @@ export const useEditGameForm = (gameId) => {
     }
   };
 
-  const isGameCreator = user && gameData && user.userId === gameData.hostId;
+  const isGameCreator =
+    user &&
+    gameData &&
+    String(user.id || user.playerId) === String(gameData.hostId);
 
   return {
     formData,
@@ -190,5 +234,7 @@ export const useEditGameForm = (gameId) => {
     isGameCreator,
     showDeleteModal,
     setShowDeleteModal,
+    teams,
+    loadingTeams,
   };
 };

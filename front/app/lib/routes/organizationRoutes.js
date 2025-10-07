@@ -1,4 +1,3 @@
-// app/lib/routes/organizationRoutes.js
 const createOrganizationRoutes = (fetchApi, fetchApiFormData) => ({
   getAll: ({ page = 0, size = 20 } = {}) =>
     fetchApi(`/organizations?page=${page}&size=${size}`),

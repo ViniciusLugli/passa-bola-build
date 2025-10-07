@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/app/lib/api";
 import { useAuth } from "@/app/context/AuthContext";
@@ -19,6 +19,9 @@ export const useNewGameForm = () => {
     homeTeamId: "",
     awayTeamId: "",
     description: "",
+    hasSpectators: false,
+    minPlayers: 10,
+    maxPlayers: 22,
   });
 
   const handleInputChange = (e) => {
@@ -28,7 +31,37 @@ export const useNewGameForm = () => {
 
   const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showHostParticipationModal, setShowHostParticipationModal] =
+    useState(false);
+  const [createdGameId, setCreatedGameId] = useState(null);
+  const [createdGame, setCreatedGame] = useState(null);
+  const [teams, setTeams] = useState([]);
+  const [loadingTeams, setLoadingTeams] = useState(false);
   const { user } = useAuth();
+
+  // Buscar equipes quando o tipo de jogo for CUP
+  useEffect(() => {
+    if (formData.gameType === "CUP") {
+      fetchTeams();
+    }
+  }, [formData.gameType]);
+
+  const fetchTeams = async () => {
+    try {
+      setLoadingTeams(true);
+      const response = await api.teams.getAll({ page: 0, size: 1000 });
+      const allTeams = response.content || response.teams || response || [];
+      setTeams(Array.isArray(allTeams) ? allTeams : []);
+    } catch (err) {
+      console.error("Erro ao buscar equipes:", err);
+      setAlert({
+        type: "error",
+        message: "Erro ao carregar as equipes disponíveis.",
+      });
+    } finally {
+      setLoadingTeams(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,6 +85,9 @@ export const useNewGameForm = () => {
       homeTeamId,
       awayTeamId,
       description,
+      hasSpectators,
+      minPlayers,
+      maxPlayers,
     } = formData;
     const fullGameDate = `${gameDate}T${gameTime}:00`;
 
@@ -73,8 +109,9 @@ export const useNewGameForm = () => {
           venue,
           gameDate: fullGameDate,
           description,
-          hostId: user.userId,
-          hostUsername: user.username,
+          hasSpectators,
+          minPlayers: parseInt(minPlayers),
+          maxPlayers: parseInt(maxPlayers),
         };
         apiCall = api.games.createFriendly;
         break;
@@ -92,8 +129,9 @@ export const useNewGameForm = () => {
           venue,
           gameDate: fullGameDate,
           description,
-          hostId: user.userId,
-          hostUsername: user.username,
+          hasSpectators,
+          minPlayers: parseInt(minPlayers),
+          maxPlayers: parseInt(maxPlayers),
         };
         apiCall = api.games.createChampionship;
         break;
@@ -126,9 +164,16 @@ export const useNewGameForm = () => {
     }
 
     try {
-      await apiCall(gamePayload);
+      const gameResponse = await apiCall(gamePayload);
       setAlert({ type: "success", message: "Jogo publicado com sucesso!" });
-      router.push("/games");
+
+      if (gameType === "FRIENDLY" || gameType === "CHAMPIONSHIP") {
+        setCreatedGameId(gameResponse.id);
+        setCreatedGame(gameResponse);
+        setShowHostParticipationModal(true);
+      } else {
+        router.push("/games");
+      }
     } catch (err) {
       setAlert({
         type: "error",
@@ -137,6 +182,14 @@ export const useNewGameForm = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleHostParticipationResponse = (wantsToParticipate) => {
+    setShowHostParticipationModal(false);
+    if (!wantsToParticipate) {
+      router.push("/games");
+    }
+    // Se wantsToParticipate === true, o modal padrão será aberto na página
   };
 
   const gameTypeOptions = [
@@ -152,5 +205,12 @@ export const useNewGameForm = () => {
     alert,
     loading,
     gameTypeOptions,
+    showHostParticipationModal,
+    setShowHostParticipationModal,
+    handleHostParticipationResponse,
+    createdGameId,
+    createdGame,
+    teams,
+    loadingTeams,
   };
 };

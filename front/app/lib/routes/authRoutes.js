@@ -1,4 +1,3 @@
-// app/lib/routes/authRoutes.js
 const createAuthRoutes = (fetchApi) => ({
   registerPlayer: (data) => fetchApi("/auth/register/player", { body: data }),
   registerOrganization: (data) =>

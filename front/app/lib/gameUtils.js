@@ -1,5 +1,3 @@
-// app/lib/gameUtils.js
-
 export const getGameTypeLabel = (gameType) => {
   switch (gameType) {
     case "FRIENDLY":
@@ -9,6 +7,6 @@ export const getGameTypeLabel = (gameType) => {
     case "CUP":
       return "Copa";
     default:
-      return gameType; // Retorna o próprio tipo se não for reconhecido
+      return gameType;
   }
 };

@@ -17,14 +17,13 @@ export default function MailPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push("/login"); // Redirecionar se não estiver autenticado
+      router.push("/login");
       return;
     }
 
     const fetchInvites = async () => {
       setLoading(true);
       try {
-        // Buscar convites de jogos (se o usuário for uma ORGANIZATION)
         if (user.userType === "ORGANIZATION") {
           const gameInvitesResponse = await api.gameInvites.getPending();
           setGameInvites(gameInvitesResponse.content || []);
@@ -48,7 +47,6 @@ export default function MailPage() {
     try {
       await api.gameInvites.accept(inviteId);
       setAlert({ type: "success", message: "Convite de jogo aceito!" });
-      // Atualizar a lista de convites
       setGameInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
     } catch (err) {
       console.error("Erro ao aceitar convite de jogo:", err);
@@ -66,7 +64,6 @@ export default function MailPage() {
     try {
       await api.gameInvites.reject(inviteId);
       setAlert({ type: "success", message: "Convite de jogo rejeitado!" });
-      // Atualizar a lista de convites
       setGameInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
     } catch (err) {
       console.error("Erro ao rejeitar convite de jogo:", err);
@@ -98,10 +95,10 @@ export default function MailPage() {
   const hasInvites = gameInvites.length > 0;
 
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="transparent min-h-screen">
       <Header />
       <main className="container mx-auto p-4 mt-8 max-w-2xl">
-        <div className="relative bg-white rounded-2xl shadow-lg p-8 flex flex-col gap-6">
+        <div className="relative bg-white border border-zinc-300 rounded-2xl shadow-lg p-8 flex flex-col gap-6">
           <button
             onClick={() => router.back()}
             className="absolute top-8 right-8 text-gray-500 hover:text-gray-800 transition-colors duration-200"

@@ -21,6 +21,7 @@ export default function PlayerSpectatorFormFields({
         value={formData[field.name]}
         onChange={handleInputChange}
         disabled={loading}
+        required={field.required}
       />
     </div>
   ));

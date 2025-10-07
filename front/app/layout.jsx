@@ -1,5 +1,5 @@
-import React from "react";
 import { AuthProvider } from "@/app/context/AuthContext";
+import { ToastProvider } from "@/app/context/ToastContext";
 import "./globals.css";
 
 export const metadata = {
@@ -13,7 +13,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthProvider>
-          {children}
+          <ToastProvider>{children}</ToastProvider>
         </AuthProvider>
       </body>
     </html>

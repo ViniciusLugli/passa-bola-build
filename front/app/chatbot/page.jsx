@@ -27,7 +27,7 @@ export default function ChatbotPage() {
     setInput("");
 
     try {
-      const response = await fetch("/api/chatbot-proxy", {
+      const response = await fetch("http://chatbot:5000/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
