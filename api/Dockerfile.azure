@@ -1,0 +1,42 @@
+# Dockerfile otimizado para Azure
+# Build stage
+FROM maven:3-eclipse-temurin-21 AS build
+WORKDIR /app
+
+# Copia apenas o pom.xml primeiro para cache de dependências
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Copia o código fonte e faz build
+COPY src ./src
+RUN mvn clean package -DskipTests -B
+
+# Runtime stage
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+# Instala curl para healthcheck
+RUN apk add --no-cache curl
+
+# Cria usuário não-root para segurança
+RUN addgroup -g 1000 appgroup && \
+    adduser -D -u 1000 -G appgroup appuser
+
+# Copia o JAR do build stage
+COPY --from=build --chown=appuser:appgroup /app/target/*.jar app.jar
+
+# Muda para usuário não-root
+USER appuser
+
+# Expõe a porta da aplicação
+EXPOSE 8080
+
+# Healthcheck para Azure
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+    CMD curl --fail http://localhost:8080/actuator/health || exit 1
+
+# Configurações JVM otimizadas para container
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -Djava.security.egd=file:/dev/./urandom"
+
+# Entrypoint
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

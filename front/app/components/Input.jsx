@@ -23,23 +23,27 @@ const Input = ({
     }
   }, [value, type]);
 
+  const isDateField = type === "date";
+  const isTimeField = type === "time";
+  const isPasswordField = type === "password";
+  const inputType = isPasswordField && showPassword ? "text" : type;
+
   const baseClasses = `
     w-full 
-    p-4 sm:p-5 
+    ${isDateField || isTimeField ? "p-3 sm:p-4" : "p-4 sm:p-5"}
     rounded-xl 
     border-2 
     border-gray-200 
     focus:outline-none 
     focus:ring-2 
     focus:ring-purple-500 
-    text-lg sm:text-xl 
+    ${
+      isDateField || isTimeField ? "text-base sm:text-lg" : "text-lg sm:text-xl"
+    }
     text-gray-800 
     transition-colors duration-200
     ${className}
   `;
-
-  const isPasswordField = type === "password";
-  const inputType = isPasswordField && showPassword ? "text" : type;
 
   return (
     <div className="flex flex-col w-full">

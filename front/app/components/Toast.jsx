@@ -40,36 +40,41 @@ export default function Toast({
     <div
       className={`
         fixed
-        bottom-6
-        right-6
+        bottom-4 sm:bottom-6
+        right-4 sm:right-6
+        left-4 sm:left-auto
         ${typeStyles[type] || typeStyles.info}
         text-white
-        px-6
-        py-4
+        px-4 sm:px-6
+        py-3 sm:py-4
         rounded-lg
         shadow-2xl
         border-2
         flex
         items-center
-        gap-3
+        gap-2 sm:gap-3
         z-50
         animate-slide-in-right
-        min-w-[280px]
+        sm:min-w-[280px]
         max-w-md
+        text-sm sm:text-base
       `}
       role="alert"
     >
-      <span className="text-2xl font-bold">{typeIcons[type]}</span>
-      <p className="flex-1 font-medium">{message}</p>
+      <span className="text-xl sm:text-2xl font-bold flex-shrink-0">
+        {typeIcons[type]}
+      </span>
+      <p className="flex-1 font-medium break-words">{message}</p>
       <button
         onClick={onClose}
         className="
           text-white
           hover:text-gray-200
           font-bold
-          text-xl
+          text-xl sm:text-2xl
           transition-colors
-          ml-2
+          ml-1 sm:ml-2
+          flex-shrink-0
         "
         aria-label="Fechar notificação"
       >

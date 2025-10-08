@@ -1,12 +1,12 @@
 export default function AuthLayout({ children }) {
   const decorations = [
     {
-      src: "/DecoB (tatica 1).svg",
+      src: "/DecoB-tatica-1.svg",
       className:
         "absolute top-[5%] left-[5%] w-24 h-24 transform rotate-[-15deg]",
     },
     {
-      src: "/DecoB (tatica 2).svg",
+      src: "/DecoB-tatica-2.svg",
       className:
         "absolute bottom-[8%] left-[12%] w-28 h-28 transform rotate-[30deg]",
     },
@@ -21,17 +21,17 @@ export default function AuthLayout({ children }) {
         "absolute top-[2%] right-[30%] w-10 h-10 transform rotate-[180deg]",
     },
     {
-      src: "/Deco (linha).svg",
+      src: "/Deco-linha.svg",
       className:
         "absolute top-1/2 left-1/2 w-48 h-48 transform -translate-x-1/2 -translate-y-1/2 opacity-20",
     },
     {
-      src: "/DecoB (tatica 1).svg",
+      src: "/DecoB-tatica-1.svg",
       className:
         "absolute bottom-[5%] right-[5%] w-16 h-16 transform rotate-[45deg]",
     },
     {
-      src: "/DecoB (tatica 2).svg",
+      src: "/DecoB-tatica-2.svg",
       className:
         "absolute top-[60%] right-[15%] w-20 h-20 transform rotate-[-50deg]",
     },

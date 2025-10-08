@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Header from "@/app/components/Header";
 import { api } from "@/app/lib/api";
 import { useAuth } from "@/app/context/AuthContext";
+import { formatDateTimeBrazil } from "@/app/lib/dateUtils";
 
 function PlayerRow({ player, leaderId, currentUserId }) {
   const isCurrentUser = Boolean(
@@ -121,7 +122,7 @@ export default function TeamDetailsPage({ params }) {
                 </h1>
                 {team?.bio && <p className="text-gray-600 mt-2">{team.bio}</p>}
                 <div className="text-sm text-gray-500 mt-3">
-                  Criado em: {new Date(team.createdAt).toLocaleString()}
+                  Criado em: {formatDateTimeBrazil(team.createdAt).fullDateTime}
                 </div>
               </div>
               <div className="ml-4">

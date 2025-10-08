@@ -34,6 +34,18 @@ const createGameRoutes = (fetchApi) => ({
       `/games/${id}/score?homeGoals=${homeGoals}&awayGoals=${awayGoals}`,
       { method: "PATCH" }
     ),
+  // Spectator endpoints
+  spectate: (gameId) =>
+    fetchApi(`/games/${gameId}/spectate`, { method: "POST" }),
+  unspectate: (gameId) =>
+    fetchApi(`/games/${gameId}/spectate`, { method: "DELETE" }),
+  getSpectators: (gameId, { page = 0, size = 50 } = {}) =>
+    fetchApi(`/games/${gameId}/spectators?page=${page}&size=${size}`),
+  getSpectatorsCount: (gameId) => fetchApi(`/games/${gameId}/spectators/count`),
+  isSpectatorSubscribed: (gameId) =>
+    fetchApi(`/games/${gameId}/spectators/is-subscribed`),
+  mySpectatorSubscriptions: ({ page = 0, size = 20 } = {}) =>
+    fetchApi(`/games/spectators/my-subscriptions?page=${page}&size=${size}`),
 });
 
 export default createGameRoutes;

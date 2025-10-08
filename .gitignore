@@ -2,3 +2,13 @@
 .github
 ap.example
 pom.example
+
+# Azure deployment files (contain sensitive information)
+.env.azure
+azure-infrastructure.env
+azure-urls.txt
+azure-env-info.txt
+
+# Environment files (contain API keys and secrets)
+.env
+chatbot/.env

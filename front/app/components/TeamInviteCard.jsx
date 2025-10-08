@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/app/lib/api";
 import Button from "@/app/components/Button";
+import { formatDateBrazil } from "@/app/lib/dateUtils";
 
 export default function TeamInviteCard({ invite, onUpdate }) {
   const [loading, setLoading] = useState(false);
@@ -48,24 +49,32 @@ export default function TeamInviteCard({ invite, onUpdate }) {
     }
   };
 
+  const teamName = invite?.team?.nameTeam ?? "(time)";
+  const senderUsername = invite?.inviter?.username ?? "(remetente)";
+  const status = invite?.status ?? invite?.inviteStatus ?? "PENDING";
+  const createdAt = invite?.createdAt ?? invite?.invite?.createdAt;
+
+  // Tradução dos status
+  const statusTranslations = {
+    PENDING: "Pendente",
+    ACCEPTED: "Aceito",
+    REJECTED: "Rejeitado",
+  };
+
+  const translatedStatus = statusTranslations[status] || status;
+
   return (
     <div className="bg-white shadow-md rounded-lg p-4 mb-4">
       <h3 className="text-lg font-semibold text-gray-800">
-        Convite para o Time:{" "}
-        {invite?.teamName ?? invite?.team?.name ?? "(time)"}
+        Convite para o Time: {teamName}
       </h3>
       <p className="text-gray-600">
-        Enviado por:{" "}
-        {invite?.senderUsername ?? invite?.sender?.username ?? "(remetente)"} em{" "}
-        {invite?.createdAt
-          ? new Date(invite.createdAt).toLocaleDateString()
-          : "(data)"}
+        Enviado por: {senderUsername} em{" "}
+        {createdAt ? formatDateBrazil(createdAt) : "(data)"}
       </p>
-      <p className="text-gray-600">
-        Status: {invite?.status ?? invite?.inviteStatus ?? "(status)"}
-      </p>
+      <p className="text-gray-600">Status: {translatedStatus}</p>
 
-      {invite.status === "PENDING" && (
+      {status === "PENDING" && (
         <div className="mt-4 flex space-x-4">
           <Button onClick={handleAccept} disabled={loading}>
             {loading ? "Aceitando..." : "Aceitar"}

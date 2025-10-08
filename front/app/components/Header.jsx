@@ -19,18 +19,27 @@ export default function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navLinks = [
+  // Construir links dinamicamente e remover "Equipes" para usuários SPECTATOR
+  const baseLinks = [
     { name: "Feed", href: "/feed" },
     { name: "Jogos", href: "/games" },
     { name: "Calendário", href: "/calendar" },
     { name: "Equipes", href: "/teams" },
     { name: "Convites", href: "/mail" },
     { name: "Chatbot", href: "/chatbot" },
-    {
+  ];
+
+  const navLinks = baseLinks
+    .filter((l) => {
+      if (!user) return true;
+      const role = String(user.userType || "").toUpperCase();
+      if (role === "SPECTATOR" && l.name === "Equipes") return false;
+      return true;
+    })
+    .concat({
       name: "Perfil",
       href: user ? `/user/${user.userType.toLowerCase()}/${user.id}` : "/login",
-    },
-  ];
+    });
 
   return (
     <header
@@ -61,7 +70,7 @@ export default function Header() {
         priority
       />
 
-      <nav className="hidden md:flex gap-2 lg:gap-4 items-center">
+      <nav className="hidden md:flex gap-1 lg:gap-2 items-center">
         {navLinks.map((link) => (
           <Link
             key={link.name}

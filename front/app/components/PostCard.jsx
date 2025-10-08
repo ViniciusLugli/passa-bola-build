@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { api } from "@/app/lib/api";
 import { useAuth } from "@/app/context/AuthContext";
+import { formatDateTimeBrazil } from "@/app/lib/dateUtils";
 
 function PostCard({ post }) {
   const { isAuthenticated } = useAuth(); // Obter estado de autenticação
@@ -58,7 +59,7 @@ function PostCard({ post }) {
             </h4>
           </Link>
           <p className="text-gray-500 text-sm">
-            {new Date(post.createdAt).toLocaleString()}
+            {formatDateTimeBrazil(post.createdAt).fullDateTime}
           </p>
         </div>
       </div>

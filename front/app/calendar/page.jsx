@@ -49,6 +49,15 @@ function Calendar() {
       return;
     }
 
+    const role = String(user.userType || "").toUpperCase();
+    if (role === "SPECTATOR") {
+      setGamesThisWeek([]);
+      setGamesThisMonth([]);
+      setGamesFuture([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
 

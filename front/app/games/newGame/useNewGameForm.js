@@ -20,6 +20,7 @@ export const useNewGameForm = () => {
     awayTeamId: "",
     description: "",
     hasSpectators: false,
+    maxSpectators: "",
     minPlayers: 10,
     maxPlayers: 22,
   });
@@ -104,12 +105,29 @@ export const useNewGameForm = () => {
           setLoading(false);
           return;
         }
+        // validações relacionadas a espectadores
+        if (hasSpectators) {
+          const maxSpec = parseInt(formData.maxSpectators);
+          if (isNaN(maxSpec) || maxSpec < 5) {
+            setAlert({
+              type: "error",
+              message:
+                "Quando houver espectadores, 'Máximo de Espectadores' deve ser informado e ser pelo menos 5.",
+            });
+            setLoading(false);
+            return;
+          }
+        }
+
         gamePayload = {
           gameName,
           venue,
           gameDate: fullGameDate,
           description,
           hasSpectators,
+          maxSpectators: hasSpectators
+            ? parseInt(formData.maxSpectators)
+            : undefined,
           minPlayers: parseInt(minPlayers),
           maxPlayers: parseInt(maxPlayers),
         };
@@ -124,12 +142,28 @@ export const useNewGameForm = () => {
           setLoading(false);
           return;
         }
+        if (hasSpectators) {
+          const maxSpec = parseInt(formData.maxSpectators);
+          if (isNaN(maxSpec) || maxSpec < 5) {
+            setAlert({
+              type: "error",
+              message:
+                "Quando houver espectadores, 'Máximo de Espectadores' deve ser informado e ser pelo menos 5.",
+            });
+            setLoading(false);
+            return;
+          }
+        }
+
         gamePayload = {
           gameName,
           venue,
           gameDate: fullGameDate,
           description,
           hasSpectators,
+          maxSpectators: hasSpectators
+            ? parseInt(formData.maxSpectators)
+            : undefined,
           minPlayers: parseInt(minPlayers),
           maxPlayers: parseInt(maxPlayers),
         };
@@ -175,9 +209,23 @@ export const useNewGameForm = () => {
         router.push("/games");
       }
     } catch (err) {
+      console.error("Erro ao criar jogo:", err);
+
+      // Extrair mensagem de erro detalhada da API
+      let errorMessage = "Erro ao publicar o jogo.";
+
+      if (err.body?.message) {
+        errorMessage = err.body.message;
+      } else if (err.body?.errors) {
+        const errors = err.body.errors;
+        errorMessage = Object.values(errors).join(", ");
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
       setAlert({
         type: "error",
-        message: err.message || "Erro ao publicar o jogo.",
+        message: errorMessage,
       });
     } finally {
       setLoading(false);

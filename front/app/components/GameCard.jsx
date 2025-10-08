@@ -54,7 +54,28 @@ export default function GameCard({ game, onGameUpdate }) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    setIsJoined(game.isJoined || false);
+    // If current user is SPECTATOR, we should verify spectator subscription via games endpoint
+    const setInitialJoined = async () => {
+      try {
+        if (
+          loggedInUser &&
+          String(loggedInUser.userType).toUpperCase() === "SPECTATOR"
+        ) {
+          const resp = await api.games.isSpectatorSubscribed(game.id);
+          // API may return { subscribed: true } or a boolean
+          const subscribed =
+            resp && (resp.subscribed === true || resp === true);
+          setIsJoined(Boolean(subscribed));
+        } else {
+          setIsJoined(game.isJoined || false);
+        }
+      } catch (err) {
+        // Fallback to game.isJoined if check fails
+        setIsJoined(game.isJoined || false);
+      }
+    };
+
+    setInitialJoined();
   }, [game.isJoined, game.id]);
 
   useEffect(() => {
@@ -96,7 +117,14 @@ export default function GameCard({ game, onGameUpdate }) {
     if (isJoined) {
       setIsProcessing(true);
       try {
-        await api.gameParticipants.leave(game.id);
+        if (
+          loggedInUser &&
+          String(loggedInUser.userType).toUpperCase() === "SPECTATOR"
+        ) {
+          await api.games.unspectate(game.id);
+        } else {
+          await api.gameParticipants.leave(game.id);
+        }
         setIsJoined(false);
         showToast("Você saiu do jogo com sucesso!", "success");
 
@@ -139,9 +167,11 @@ export default function GameCard({ game, onGameUpdate }) {
     router.push(`/games/edit/${game.id}`);
   };
 
-  // Usar user.id (ID do banco) ao invés de userId (ID do JWT)
+  const requiredHostType =
+    game && game.gameType === "CUP" ? "ORGANIZATION" : "PLAYER";
   const isGameCreator =
     loggedInUser &&
+    String(loggedInUser.userType || "").toUpperCase() === requiredHostType &&
     String(loggedInUser.id || loggedInUser.playerId) === String(game.hostId);
 
   return (
@@ -152,9 +182,9 @@ export default function GameCard({ game, onGameUpdate }) {
         w-full
         bg-gray-50
         border
-        border-zinc-200
-        rounded-xl
-        p-6
+        border-gray-200
+        rounded-2xl
+        p-4 sm:p-5 md:p-6
         flex
         flex-col
         cursor-pointer
@@ -164,7 +194,12 @@ export default function GameCard({ game, onGameUpdate }) {
         ease-in-out
         hover:border-purple-300
         hover:bg-white
-        ${isExpanded ? "border-purple-400 bg-white shadow-md" : ""}
+        hover:shadow-lg
+        ${
+          isExpanded
+            ? "border-purple-300 bg-white shadow-xl pb-20 sm:pb-24"
+            : "pb-20 sm:pb-24"
+        }
       `}
     >
       <div
@@ -172,16 +207,20 @@ export default function GameCard({ game, onGameUpdate }) {
           absolute 
           top-0 
           right-0 
-          py-1 
-          px-4 
+          py-1.5 sm:py-2
+          px-3 sm:px-4 md:px-5
           rounded-bl-2xl 
-          text-sm 
+          text-xs sm:text-sm
           font-bold 
           text-white 
           transition-all 
           duration-300
           ${typeColors[game.gameType]}
-          ${isExpanded ? "w-40 rounded-none rounded-bl-2xl px-6 py-2" : ""}
+          ${
+            isExpanded
+              ? "sm:w-40 rounded-none rounded-bl-2xl sm:px-6 sm:py-2.5"
+              : ""
+          }
         `}
       >
         {isExpanded ? (
@@ -190,67 +229,83 @@ export default function GameCard({ game, onGameUpdate }) {
               <Image
                 src={statusIcons[game.gameType]}
                 alt={getGameTypeLabel(game.gameType)}
-                width={20}
-                height={20}
+                width={18}
+                height={18}
+                className="hidden sm:block"
               />
             )}
-            <span>{getGameTypeLabel(game.gameType).toUpperCase()}</span>
+            <span className="hidden sm:inline">
+              {getGameTypeLabel(game.gameType).toUpperCase()}
+            </span>
+            <span className="sm:hidden">{getGameTypeLabel(game.gameType)}</span>
           </div>
         ) : (
           <span>{getGameTypeLabel(game.gameType)}</span>
         )}
       </div>
 
-      <div className="flex justify-between items-start gap-4 z-10">
-        <div className="flex-grow">
-          <h3 className="font-bold text-lg md:text-xl text-gray-900 leading-tight">
+      <div className="flex justify-between items-start gap-3 sm:gap-4 z-10 pr-16 sm:pr-20">
+        <div className="flex-grow min-w-0">
+          <h3 className="font-bold text-base sm:text-lg md:text-xl text-gray-900 leading-tight truncate sm:whitespace-normal">
             {gameTitle}
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            {gameAddress} - {gameDateFormatted}
+          <p className="text-xs sm:text-sm text-gray-500 mt-1 break-words">
+            <span className="inline-block mr-1">📍</span>
+            {gameAddress}
+          </p>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+            <span className="inline-block mr-1">🕐</span>
+            {gameDateFormatted}
           </p>
           {organizer && (
-            <p className="text-sm text-gray-500">Organizador: {organizer}</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+              <span className="inline-block mr-1">👤</span>
+              <span className="font-medium">Organizador:</span> {organizer}
+            </p>
           )}
         </div>
       </div>
 
       {isExpanded && (
-        <div className="mt-4 border-t border-gray-200 pt-4 z-10">
-          <p className="text-gray-700 leading-relaxed mb-4">
+        <div className="mt-3 sm:mt-4 border-t border-gray-200 pt-3 sm:pt-4 z-10 animate-in fade-in slide-in-from-top-2 duration-300">
+          <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4 sm:mb-5">
             {game.description || "Nenhuma descrição disponível."}
           </p>
 
           {(game.gameType === "FRIENDLY" ||
             game.gameType === "CHAMPIONSHIP") && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
-              <h4 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
+            <div className="mb-5 sm:mb-6 p-3 sm:p-4 md:p-5 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-gray-200">
+              <h4 className="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
                 <span className="text-purple-600">ℹ️</span>
                 Informações da Partida
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div className="bg-white p-3 rounded-lg shadow-sm">
-                  <div className="text-gray-500 text-xs mb-1">Jogadoras</div>
-                  <div className="font-bold text-lg text-gray-800">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs sm:text-sm">
+                <div className="bg-white p-2.5 sm:p-3 rounded-lg shadow-sm border border-gray-200 hover:border-purple-300 transition-colors">
+                  <div className="text-gray-500 text-[10px] sm:text-xs mb-1">
+                    Jogadoras
+                  </div>
+                  <div className="font-bold text-base sm:text-lg text-gray-800">
                     {game.currentPlayerCount ||
                       participants.team1.length + participants.team2.length}
-                    <span className="text-sm text-gray-500 font-normal">
+                    <span className="text-xs sm:text-sm text-gray-500 font-normal">
                       {" "}
                       / {game.maxPlayers || "∞"}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-[10px] sm:text-xs text-gray-400 mt-0.5 sm:mt-1">
                     Mínimo: {game.minPlayers || "N/A"}
                   </div>
                 </div>
 
-                <div className="bg-white p-3 rounded-lg shadow-sm">
-                  <div className="text-gray-500 text-xs mb-1">Distribuição</div>
-                  <div className="font-bold text-lg text-gray-800">
+                <div className="bg-white p-2.5 sm:p-3 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors">
+                  <div className="text-gray-500 text-[10px] sm:text-xs mb-1">
+                    Distribuição
+                  </div>
+                  <div className="font-bold text-base sm:text-lg text-gray-800">
                     {game.team1Count || participants.team1.length} vs{" "}
                     {game.team2Count || participants.team2.length}
                   </div>
-                  <div className="text-xs mt-1">
+                  <div className="text-[10px] sm:text-xs mt-0.5 sm:mt-1">
                     {(game.team1Count || participants.team1.length) === 0 &&
                     (game.team2Count || participants.team2.length) === 0 ? (
                       <span className="text-gray-400">Sem jogadores</span>
@@ -268,11 +323,11 @@ export default function GameCard({ game, onGameUpdate }) {
                   </div>
                 </div>
 
-                <div className="bg-white p-3 rounded-lg shadow-sm">
-                  <div className="text-gray-500 text-xs mb-1">
+                <div className="bg-white p-2.5 sm:p-3 rounded-lg shadow-sm border border-gray-200 hover:border-green-300 transition-colors">
+                  <div className="text-gray-500 text-[10px] sm:text-xs mb-1">
                     Pode Iniciar?
                   </div>
-                  <div className="font-bold text-lg">
+                  <div className="font-bold text-base sm:text-lg">
                     {game.canStart ? (
                       <span className="text-green-600">✓ Sim</span>
                     ) : (
@@ -280,7 +335,7 @@ export default function GameCard({ game, onGameUpdate }) {
                     )}
                   </div>
                   {!game.canStart && (
-                    <div className="text-xs text-gray-400 mt-1">
+                    <div className="text-[10px] sm:text-xs text-gray-400 mt-0.5 sm:mt-1 line-clamp-2">
                       {game.currentPlayerCount < game.minPlayers
                         ? `Faltam ${
                             game.minPlayers - game.currentPlayerCount
@@ -290,25 +345,38 @@ export default function GameCard({ game, onGameUpdate }) {
                   )}
                 </div>
 
-                {game.hasSpectators && (
-                  <div className="bg-white p-3 rounded-lg shadow-sm">
-                    <div className="text-gray-500 text-xs mb-1">
-                      Espectadores
-                    </div>
-                    <div className="font-bold text-lg text-gray-800">
-                      {game.hasSpectators ? (
-                        <span className="text-green-600">✓ Permitido</span>
-                      ) : (
-                        <span className="text-gray-400">✗ Não</span>
-                      )}
-                    </div>
-                    {game.minSpectators && (
-                      <div className="text-xs text-gray-400 mt-1">
-                        Mínimo: {game.minSpectators}
-                      </div>
-                    )}
+                {/* Espectadores: card com mesmo design do card de Jogadoras */}
+                <div className="bg-white p-2.5 sm:p-3 rounded-lg shadow-sm border border-gray-200 hover:border-orange-300 transition-colors">
+                  <div className="text-gray-500 text-[10px] sm:text-xs mb-1">
+                    Espectadores
                   </div>
-                )}
+
+                  {game.hasSpectators ? (
+                    <>
+                      <div className="font-bold text-base sm:text-lg text-gray-800">
+                        {game.currentSpectatorCount ?? 0}
+                        <span className="text-xs sm:text-sm text-gray-500 font-normal">
+                          {" "}
+                          / {game.maxSpectators || "∞"}
+                        </span>
+                      </div>
+
+                      <div className="text-[10px] sm:text-xs text-green-600 font-semibold mt-0.5 sm:mt-1">
+                        ✓ Permitido
+                      </div>
+
+                      {game.minSpectators && (
+                        <div className="text-[10px] sm:text-xs text-gray-400 mt-0.5 sm:mt-1">
+                          Mínimo: {game.minSpectators}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="font-bold text-base sm:text-lg text-gray-400">
+                      ✗ Não
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -316,35 +384,40 @@ export default function GameCard({ game, onGameUpdate }) {
           {/* Lista de Jogadoras */}
           {(game.gameType === "FRIENDLY" ||
             game.gameType === "CHAMPIONSHIP") && (
-            <div className="mt-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-3">
+            <div className="mt-5 sm:mt-6">
+              <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                <span className="text-xl sm:text-2xl">👥</span>
                 Jogadoras Inscritas
               </h4>
 
               {loadingParticipants ? (
-                <p className="text-center text-gray-500 py-4">
-                  Carregando participantes...
-                </p>
+                <div className="flex items-center justify-center py-8 sm:py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-3 border-purple-500 border-t-transparent"></div>
+                  <span className="ml-3 text-gray-600 font-medium text-sm sm:text-base">
+                    Carregando participantes...
+                  </span>
+                </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300">
-                    <h5 className="font-bold text-blue-800 mb-3 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-3 sm:p-4 border border-blue-200 shadow-sm">
+                    <h5 className="font-bold text-blue-800 mb-2 sm:mb-3 text-center text-sm sm:text-base flex items-center justify-center gap-2">
+                      <span className="text-lg sm:text-xl">🔵</span>
                       Time 1 ({participants.team1.length})
                     </h5>
                     {participants.team1.length > 0 ? (
-                      <ul className="space-y-2">
+                      <ul className="space-y-1.5 sm:space-y-2 max-h-60 overflow-y-auto">
                         {participants.team1.map((participant, index) => (
                           <li
                             key={index}
-                            className="bg-white rounded p-2 text-sm text-gray-800 border border-blue-200"
+                            className="bg-white rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm text-gray-800 border border-blue-200 hover:border-blue-400 transition-colors shadow-sm"
                           >
-                            <div className="font-semibold">
+                            <div className="font-semibold truncate">
                               {participant.player?.name ||
                                 participant.player?.username ||
                                 "Jogadora"}
                             </div>
                             {participant.participationType === "WITH_TEAM" && (
-                              <div className="text-xs text-gray-500 italic">
+                              <div className="text-[10px] sm:text-xs text-gray-500 italic mt-0.5">
                                 (Com equipe)
                               </div>
                             )}
@@ -352,30 +425,33 @@ export default function GameCard({ game, onGameUpdate }) {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-center text-gray-500 text-sm">
-                        Nenhuma jogadora
-                      </p>
+                      <div className="text-center py-6 sm:py-8">
+                        <p className="text-gray-500 text-xs sm:text-sm">
+                          Nenhuma jogadora
+                        </p>
+                      </div>
                     )}
                   </div>
 
-                  <div className="bg-red-50 rounded-lg p-4 border-2 border-red-300">
-                    <h5 className="font-bold text-red-800 mb-3 text-center">
+                  <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-3 sm:p-4 border border-red-200 shadow-sm">
+                    <h5 className="font-bold text-red-800 mb-2 sm:mb-3 text-center text-sm sm:text-base flex items-center justify-center gap-2">
+                      <span className="text-lg sm:text-xl">🔴</span>
                       Time 2 ({participants.team2.length})
                     </h5>
                     {participants.team2.length > 0 ? (
-                      <ul className="space-y-2">
+                      <ul className="space-y-1.5 sm:space-y-2 max-h-60 overflow-y-auto">
                         {participants.team2.map((participant, index) => (
                           <li
                             key={index}
-                            className="bg-white rounded p-2 text-sm text-gray-800 border border-red-200"
+                            className="bg-white rounded-lg p-2 sm:p-2.5 text-xs sm:text-sm text-gray-800 border border-red-200 hover:border-red-400 transition-colors shadow-sm"
                           >
-                            <div className="font-semibold">
+                            <div className="font-semibold truncate">
                               {participant.player?.name ||
                                 participant.player?.username ||
                                 "Jogadora"}
                             </div>
                             {participant.participationType === "WITH_TEAM" && (
-                              <div className="text-xs text-gray-500 italic">
+                              <div className="text-[10px] sm:text-xs text-gray-500 italic mt-0.5">
                                 (Com equipe)
                               </div>
                             )}
@@ -383,9 +459,11 @@ export default function GameCard({ game, onGameUpdate }) {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-center text-gray-500 text-sm">
-                        Nenhuma jogadora
-                      </p>
+                      <div className="text-center py-6 sm:py-8">
+                        <p className="text-gray-500 text-xs sm:text-sm">
+                          Nenhuma jogadora
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -399,39 +477,65 @@ export default function GameCard({ game, onGameUpdate }) {
       <div
         className="
           absolute 
-          bottom-4 
-          right-4 
-          p-2 
-          bg-gray-200/50 
-          rounded-full 
-          z-20
-          transition-all 
-          duration-200
-          hover:scale-110
-          flex items-center gap-2
+          bottom-3 sm:bottom-4 
+          right-3 sm:right-4 
+          flex
+          items-center 
+          gap-1.5 sm:gap-2
+          z-30
         "
         onClick={(e) => e.stopPropagation()}
       >
         {isGameCreator && (
           <button
             onClick={handleEditGame}
-            className="p-1 rounded-full hover:bg-gray-300"
+            className="
+              p-2 sm:p-2.5
+              bg-purple-100
+              hover:bg-purple-200
+              rounded-full
+              transition-all
+              duration-200
+              hover:scale-110
+              active:scale-95
+              shadow-md
+              hover:shadow-lg
+              border-2
+              border-purple-300
+            "
             title="Editar Jogo"
           >
             <Image
               src="/icons/pencil.svg"
               alt="Editar Jogo"
-              width={24}
-              height={24}
+              width={20}
+              height={20}
+              className="w-5 h-5 sm:w-6 sm:h-6"
             />
           </button>
         )}
         <button
           onClick={handleJoinLeaveGame}
           disabled={isProcessing}
-          className={`p-1 rounded-full hover:bg-gray-300 ${
-            isProcessing ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+          className={`
+            p-2 sm:p-2.5
+            rounded-full
+            transition-all
+            duration-200
+            shadow-md
+            hover:shadow-lg
+            border-2
+            ${
+              isJoined
+                ? "bg-green-100 hover:bg-green-200 border-green-300"
+                : "bg-blue-100 hover:bg-blue-200 border-blue-300"
+            }
+            ${
+              isProcessing
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:scale-110 active:scale-95"
+            }
+          `}
           title={
             isProcessing
               ? "Processando..."
@@ -440,12 +544,17 @@ export default function GameCard({ game, onGameUpdate }) {
               : "Inscrever-se no jogo"
           }
         >
-          <Image
-            src={isJoined ? "/icons/check.svg" : "/icons/adicionar.svg"}
-            alt={isJoined ? "Inscrito" : "Inscrever-se"}
-            width={24}
-            height={24}
-          />
+          {isProcessing ? (
+            <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-gray-600 border-t-transparent"></div>
+          ) : (
+            <Image
+              src={isJoined ? "/icons/check.svg" : "/icons/adicionar.svg"}
+              alt={isJoined ? "Inscrito" : "Inscrever-se"}
+              width={20}
+              height={20}
+              className="w-5 h-5 sm:w-6 sm:h-6"
+            />
+          )}
         </button>
       </div>
 

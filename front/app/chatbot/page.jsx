@@ -5,6 +5,9 @@ import Input from "@/app/components/Input";
 import Button from "@/app/components/Button";
 import Header from "@/app/components/Header";
 
+const CHATBOT_URL =
+  process.env.NEXT_PUBLIC_CHATBOT_URL || "http://localhost:5000";
+
 export default function ChatbotPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -27,7 +30,7 @@ export default function ChatbotPage() {
     setInput("");
 
     try {
-      const response = await fetch("http://chatbot:5000/chat", {
+      const response = await fetch(`${CHATBOT_URL}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,7 +43,7 @@ export default function ChatbotPage() {
       }
 
       const data = await response.json();
-      const botMessage = { sender: "bot", text: data.response };
+      const botMessage = { sender: "bot", text: data.reply || data.response };
       setMessages((prevMessages) => [...prevMessages, botMessage]);
     } catch (error) {
       console.error("Erro ao comunicar com o chatbot:", error);

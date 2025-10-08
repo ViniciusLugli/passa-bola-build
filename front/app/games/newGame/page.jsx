@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
 import Alert from "@/app/components/Alert";
+import Toast from "@/app/components/Toast";
 import Modal from "@/app/components/Modal";
 import JoinGameModal from "@/app/components/JoinGameModal";
 import GameForm from "./components/GameForm";
 import { useNewGameForm } from "./useNewGameForm";
+import { useAuth } from "@/app/context/AuthContext";
 
 export default function NewGamePage() {
   const router = useRouter();
+  const { user: loggedInUser, isAuthenticated } = useAuth();
   const {
     formData,
     handleInputChange,
@@ -28,6 +31,24 @@ export default function NewGamePage() {
   } = useNewGameForm();
 
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+
+  // Redirecionar SPECTATORs que acessarem a página de criação
+  useEffect(() => {
+    if (isAuthenticated && loggedInUser) {
+      const role = String(loggedInUser.userType || "").toUpperCase();
+      if (role === "SPECTATOR") {
+        router.replace("/games");
+      }
+    }
+  }, [isAuthenticated, loggedInUser]);
+
+  // Mostrar toast quando houver erro
+  useEffect(() => {
+    if (alert && alert.type === "error") {
+      setShowToast(true);
+    }
+  }, [alert]);
 
   const handleHostWantsToJoin = () => {
     setShowHostParticipationModal(false);
@@ -157,6 +178,15 @@ export default function NewGamePage() {
           gameId={createdGameId}
           game={createdGame}
           onSuccess={handleJoinSuccess}
+        />
+      )}
+
+      {showToast && alert && alert.type === "error" && (
+        <Toast
+          message={alert.message}
+          type="error"
+          onClose={() => setShowToast(false)}
+          duration={5000}
         />
       )}
     </div>

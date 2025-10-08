@@ -1,0 +1,108 @@
+{
+  "project": {
+    "name": "passa-bola",
+    "displayName": "Passa Bola - Rede Social de Futebol",
+    "description": "Plataforma social para conectar jogadores, times e organizadores de futebol"
+  },
+  "azure": {
+    "location": "westus3",
+    "locationName": "West US 3",
+    "resourceGroup": "rg-passa-bola",
+    "tags": {
+      "Environment": "Production",
+      "Project": "PassaBola",
+      "ManagedBy": "AzureCLI"
+    }
+  },
+  "containerRegistry": {
+    "name": "crpassabola",
+    "sku": "Basic",
+    "adminEnabled": true
+  },
+  "database": {
+    "type": "mysql-flexible",
+    "comment": "Azure Database for MySQL Flexible Server (compatível com MariaDB). Tier Burstable B1s é o mais barato (~$12/mês)",
+    "serverName": "mysql-passa-bola",
+    "databaseName": "api_passa_bola",
+    "adminUsername": "passabolaadmin",
+    "sku": {
+      "name": "Standard_B1s",
+      "tier": "Burstable"
+    },
+    "version": "8.0.21",
+    "storageSize": 20,
+    "storageIops": 360,
+    "backupRetention": 7,
+    "geoRedundantBackup": "Disabled",
+    "highAvailability": "Disabled",
+    "publicNetworkAccess": "Enabled"
+  },
+  "containerApps": {
+    "environment": "cae-passa-bola",
+    "workloadProfiles": "Consumption",
+    "comment": "Consumption workload profile é o mais barato (pay-per-use). Recursos mínimos para reduzir custos.",
+    "api": {
+      "name": "ca-passa-bola-api",
+      "image": "api-passa-bola",
+      "targetPort": 8080,
+      "externalIngress": true,
+      "transport": "http",
+      "cpu": "1.0",
+      "memory": "2.0Gi",
+      "minReplicas": 0,
+      "maxReplicas": 2
+    },
+    "frontend": {
+      "name": "ca-passa-bola-front",
+      "image": "front-passa-bola",
+      "targetPort": 3000,
+      "externalIngress": true,
+      "transport": "http",
+      "cpu": "0.25",
+      "memory": "0.5Gi",
+      "minReplicas": 0,
+      "maxReplicas": 2
+    },
+    "chatbot": {
+      "name": "ca-passa-bola-chatbot",
+      "image": "chatbot-passa-bola",
+      "targetPort": 5000,
+      "externalIngress": true,
+      "transport": "http",
+      "cpu": "0.25",
+      "memory": "0.5Gi",
+      "minReplicas": 0,
+      "maxReplicas": 2
+    }
+  },
+  "monitoring": {
+    "enableApplicationInsights": true,
+    "appInsightsName": "ai-passa-bola",
+    "logAnalyticsWorkspace": "log-passa-bola",
+    "comment": "Application Insights tem 5GB/mês grátis. Prometheus/Grafana são deployados como containers (mais barato que Azure Managed Prometheus/Grafana)",
+    "useAzureManagedPrometheus": false,
+    "useAzureManagedGrafana": false,
+    "prometheus": {
+      "enabled": true,
+      "deployAsContainer": true,
+      "image": "prom/prometheus:latest",
+      "cpu": "0.25",
+      "memory": "0.5Gi",
+      "minReplicas": 1,
+      "maxReplicas": 1
+    },
+    "grafana": {
+      "enabled": true,
+      "deployAsContainer": true,
+      "image": "grafana/grafana:latest",
+      "cpu": "0.25",
+      "memory": "0.5Gi",
+      "minReplicas": 1,
+      "maxReplicas": 1
+    }
+  },
+  "networking": {
+    "allowAzureServices": true,
+    "corsOrigins": ["*"]
+  }
+}

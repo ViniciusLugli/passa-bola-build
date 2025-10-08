@@ -45,16 +45,16 @@ public class Game {
     @Column(name = "max_players", nullable = false)
     private Integer maxPlayers = 22; // Maximum 11x11
     
-    @Column(name = "min_spectators")
-    private Integer minSpectators = 0; // 5 if hasSpectators is true
+    @Column(name = "max_spectators")
+    private Integer maxSpectators = 0; // Maximum number of spectators allowed
     
     // Fields for CUP games (and backward compatibility)
     @ManyToOne
-    @JoinColumn(name = "home_team_id")
+    @JoinColumn(name = "home_team_id", nullable = true)
     private Organization homeTeam;
     
     @ManyToOne
-    @JoinColumn(name = "away_team_id")
+    @JoinColumn(name = "away_team_id", nullable = true)
     private Organization awayTeam;
     
     @Column(name = "game_date", nullable = false)
@@ -168,7 +168,19 @@ public class Game {
     }
     
     /**
-     * Validates if the game has the minimum required spectators
+     * Validates if the game has reached maximum spectators
+     * @param currentSpectatorCount current number of spectators
+     * @return true if max reached, false otherwise
+     */
+    public boolean hasReachedMaxSpectators(int currentSpectatorCount) {
+        if (!hasSpectators) {
+            return false; // No spectators allowed
+        }
+        return currentSpectatorCount >= (maxSpectators != null ? maxSpectators : 0);
+    }
+    
+    /**
+     * Validates if the game has the minimum required spectators (5)
      * @param currentSpectatorCount current number of spectators
      * @return true if valid, false otherwise
      */
@@ -176,7 +188,7 @@ public class Game {
         if (!hasSpectators) {
             return true; // No spectators required
         }
-        return currentSpectatorCount >= (minSpectators != null ? minSpectators : 5);
+        return currentSpectatorCount >= 5; // Minimum 5 spectators when enabled
     }
     
     /**

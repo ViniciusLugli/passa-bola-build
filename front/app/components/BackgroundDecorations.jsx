@@ -4,11 +4,11 @@ import React from "react";
 import Image from "next/image";
 
 const SOURCES = [
-  "/DecoR (tatica 1).svg",
-  "/DecoR (tatica 2).svg",
+  "/DecoR-tatica-1.svg",
+  "/DecoR-tatica-2.svg",
   "/TrianguloM-RV.svg",
   "/TrianguloP-RV.svg",
-  "/Deco (linha).svg",
+  "/Deco-linha.svg",
 ];
 
 const FIXED_POSITIONS = [
@@ -153,7 +153,7 @@ export default function BackgroundDecorations({
     <div className={`${bgColor} relative overflow-hidden min-h-screen`}>
       {isMounted && randomizedPositions.length > 0 && (
         <div
-          className="absolute inset-0 z-0 pointer-events-none"
+          className="absolute inset-0 z-0 pointer-events-none select-none"
           aria-hidden="true"
         >
           {randomizedPositions.map((d, i) => (
@@ -172,11 +172,13 @@ export default function BackgroundDecorations({
                 }deg)`,
                 opacity: d.opacity,
                 pointerEvents: "none",
+                userSelect: "none",
                 maxWidth: "18vw",
                 minWidth: 24,
               }}
               unoptimized
               priority={false}
+              draggable={false}
             />
           ))}
         </div>

@@ -63,7 +63,8 @@ export default function JoinGameModal({
     if (type === "INDIVIDUAL") {
       setStep("selectTeamSide");
     } else {
-      setStep("selectPlayerTeam");
+      if (type === "WITH_TEAM") setStep("selectPlayerTeam");
+      if (type === "SPECTATOR") setStep("selectTeamSide");
     }
   };
 
@@ -97,12 +98,10 @@ export default function JoinGameModal({
     const team1Count = game.team1Count || 0;
     const team2Count = game.team2Count || 0;
 
-    // Se os times estão balanceados ou o time escolhido tem menos jogadores, permitir
     if (team1Count === team2Count) {
       return { valid: true, message: "" };
     }
 
-    // Se tentar se inscrever no time com MAIS jogadores, bloquear
     if (side === 1 && team1Count > team2Count) {
       return {
         valid: false,
@@ -128,29 +127,28 @@ export default function JoinGameModal({
     setTeamSide(side);
     setError(null);
 
-    // Validar balanceamento dos times PRIMEIRO
     const balanceValidation = validateTeamBalance(side);
     if (!balanceValidation.valid) {
       setError(balanceValidation.message);
-      return; // Bloqueia a inscrição
+      return;
     }
 
-    // Determinar quantas jogadoras serão adicionadas
-    let playerCount = 1; // Individual
+    let playerCount = 1;
     if (participationType === "WITH_TEAM" && selectedPlayerTeam) {
       const selectedTeam = playerTeams.find((t) => t.id === selectedPlayerTeam);
       playerCount = selectedTeam ? selectedTeam.playerCount || 0 : 0;
     }
 
-    // Validar capacidade do time
     if (!validateTeamCapacity(side, playerCount)) {
-      return; // Bloqueia a inscrição
+      return;
     }
 
     if (participationType === "INDIVIDUAL") {
-      await handleJoinGame(side, "INDIVIDUAL", null);
+      await handleJoinGame(side, "INDIVIDUAL");
     } else if (participationType === "WITH_TEAM") {
-      await handleJoinGame(side, "WITH_TEAM", selectedPlayerTeam);
+      await handleJoinGame(side, "WITH_TEAM");
+    } else if (participationType === "SPECTATOR") {
+      await handleJoinGame(null, "SPECTATOR");
     }
   };
 
@@ -159,16 +157,37 @@ export default function JoinGameModal({
     setStep("selectTeamSide");
   };
 
-  const handleJoinGame = async (side, type, playerTeamId) => {
+  const handleJoinGame = async (side, type) => {
     try {
       setLoading(true);
       setError(null);
 
-      await api.gameParticipants.join({
-        gameId: gameId,
-        participationType: type,
-        teamSide: side,
-      });
+      if (type === "SPECTATOR") {
+        const currentSpectators =
+          (game && (game.currentSpectatorCount ?? game.currentPlayerCount)) ||
+          0;
+        const maxSpectators = (game && game.maxSpectators) || 0;
+
+        if (!game || !game.hasSpectators) {
+          setError("Este jogo não permite espectadores.");
+          return;
+        }
+
+        if (maxSpectators > 0 && currentSpectators >= maxSpectators) {
+          setError("Limite de espectadores atingido.");
+          return;
+        }
+      }
+
+      if (type === "SPECTATOR") {
+        await api.games.spectate(gameId);
+      } else {
+        await api.gameParticipants.join({
+          gameId: gameId,
+          participationType: type,
+          teamSide: side,
+        });
+      }
 
       onSuccess();
       handleClose();
@@ -209,7 +228,9 @@ export default function JoinGameModal({
       isOpen={isOpen}
       onClose={handleClose}
       title={
-        step === "participationType"
+        participationType === "SPECTATOR"
+          ? "Confirmar Espectador"
+          : step === "participationType"
           ? "Como deseja participar?"
           : step === "selectPlayerTeam"
           ? "Selecione sua equipe"
@@ -224,26 +245,91 @@ export default function JoinGameModal({
 
       {step === "participationType" && (
         <div className="flex flex-col gap-4">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleParticipationTypeSelect("INDIVIDUAL");
-            }}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-            disabled={loading}
-          >
-            Participar Sozinho(a)
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleParticipationTypeSelect("WITH_TEAM");
-            }}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-            disabled={loading}
-          >
-            Participar com Equipe
-          </button>
+          {user && String(user.userType).toUpperCase() === "SPECTATOR" ? (
+            game && game.hasSpectators ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleParticipationTypeSelect("SPECTATOR");
+                }}
+                className={`w-full font-bold py-3 px-4 rounded-lg transition-colors ${
+                  loading
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-yellow-600 hover:bg-yellow-700"
+                } text-white`}
+                disabled={
+                  loading ||
+                  (game.maxSpectators &&
+                    (game.currentSpectatorCount ?? game.currentPlayerCount) >=
+                      game.maxSpectators)
+                }
+                title={
+                  game.maxSpectators &&
+                  (game.currentSpectatorCount ?? game.currentPlayerCount) >=
+                    game.maxSpectators
+                    ? "Limite de espectadores atingido"
+                    : ""
+                }
+              >
+                Ser Espectador
+              </button>
+            ) : (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                Este jogo não aceita espectadores.
+              </div>
+            )
+          ) : (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleParticipationTypeSelect("INDIVIDUAL");
+                }}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                disabled={loading}
+              >
+                Participar Sozinho(a)
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleParticipationTypeSelect("WITH_TEAM");
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                disabled={loading}
+              >
+                Participar com Equipe
+              </button>
+              {game && game.hasSpectators && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleParticipationTypeSelect("SPECTATOR");
+                  }}
+                  className={`w-full font-bold py-3 px-4 rounded-lg transition-colors ${
+                    loading
+                      ? "bg-gray-300 cursor-not-allowed"
+                      : "bg-yellow-600 hover:bg-yellow-700"
+                  } text-white`}
+                  disabled={
+                    loading ||
+                    (game.maxSpectators &&
+                      (game.currentSpectatorCount ?? game.currentPlayerCount) >=
+                        game.maxSpectators)
+                  }
+                  title={
+                    game.maxSpectators &&
+                    (game.currentSpectatorCount ?? game.currentPlayerCount) >=
+                      game.maxSpectators
+                      ? "Limite de espectadores atingido"
+                      : ""
+                  }
+                >
+                  Ser Espectador
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -305,67 +391,116 @@ export default function JoinGameModal({
 
       {step === "selectTeamSide" && (
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-gray-600 mb-2">
-            Em qual time você quer jogar?
-          </p>
+          {participationType !== "SPECTATOR" && (
+            <p className="text-sm text-gray-600 mb-2">
+              Em qual time você quer jogar?
+            </p>
+          )}
 
-          {game && (
-            <div className="flex justify-between text-xs text-gray-500 mb-2 px-1">
+          {game && game.hasSpectators && (
+            <div className="text-sm text-gray-500 mb-2 px-1">
               <span>
-                Time 1: {game.team1Count || 0} jogadora
-                {(game.team1Count || 0) !== 1 ? "s" : ""}
-              </span>
-              <span>
-                Time 2: {game.team2Count || 0} jogadora
-                {(game.team2Count || 0) !== 1 ? "s" : ""}
+                Espectadores:{" "}
+                {(game.currentSpectatorCount ?? game.currentPlayerCount) || 0} /{" "}
+                {game.maxSpectators || "∞"}
               </span>
             </div>
           )}
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTeamSideSelect(1);
-            }}
-            className={`w-full font-bold py-3 px-4 rounded-lg transition-colors ${
-              game && (game.team1Count || 0) > (game.team2Count || 0)
-                ? "bg-gray-400 cursor-not-allowed opacity-50"
-                : "bg-blue-600 hover:bg-blue-700"
-            } text-white`}
-            disabled={
-              loading ||
-              (game && (game.team1Count || 0) > (game.team2Count || 0))
-            }
-            title={
-              game && (game.team1Count || 0) > (game.team2Count || 0)
-                ? "Este time tem mais jogadores. Escolha o Time 2 para equilibrar."
-                : ""
-            }
-          >
-            {loading && teamSide === 1 ? "Inscrevendo..." : "Time 1"}
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTeamSideSelect(2);
-            }}
-            className={`w-full font-bold py-3 px-4 rounded-lg transition-colors ${
-              game && (game.team2Count || 0) > (game.team1Count || 0)
-                ? "bg-gray-400 cursor-not-allowed opacity-50"
-                : "bg-red-600 hover:bg-red-700"
-            } text-white`}
-            disabled={
-              loading ||
-              (game && (game.team2Count || 0) > (game.team1Count || 0))
-            }
-            title={
-              game && (game.team2Count || 0) > (game.team1Count || 0)
-                ? "Este time tem mais jogadores. Escolha o Time 1 para equilibrar."
-                : ""
-            }
-          >
-            {loading && teamSide === 2 ? "Inscrevendo..." : "Time 2"}
-          </button>
+          {participationType === "SPECTATOR" ? (
+            <>
+              <p className="text-sm text-gray-700 mb-2">
+                Você se inscreverá como espectador(a).
+              </p>
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await handleJoinGame(null, "SPECTATOR");
+                }}
+                className={`w-full font-bold py-3 px-4 rounded-lg transition-colors ${
+                  loading
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-yellow-600 hover:bg-yellow-700"
+                } text-white`}
+                disabled={
+                  loading ||
+                  !(game && game.hasSpectators) ||
+                  (game.maxSpectators &&
+                    (game.currentSpectatorCount ?? game.currentPlayerCount) >=
+                      game.maxSpectators)
+                }
+                title={
+                  game.maxSpectators &&
+                  (game.currentSpectatorCount ?? game.currentPlayerCount) >=
+                    game.maxSpectators
+                    ? "Limite de espectadores atingido"
+                    : ""
+                }
+              >
+                {loading ? "Inscrevendo..." : "Confirmar como Espectador"}
+              </button>
+            </>
+          ) : (
+            <>
+              {game && (
+                <div className="flex justify-between text-xs text-gray-500 mb-2 px-1">
+                  <span>
+                    Time 1: {game.team1Count || 0} jogadora
+                    {(game.team1Count || 0) !== 1 ? "s" : ""}
+                  </span>
+                  <span>
+                    Time 2: {game.team2Count || 0} jogadora
+                    {(game.team2Count || 0) !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTeamSideSelect(1);
+                }}
+                className={`w-full font-bold py-3 px-4 rounded-lg transition-colors ${
+                  game && (game.team1Count || 0) > (game.team2Count || 0)
+                    ? "bg-gray-400 cursor-not-allowed opacity-50"
+                    : "bg-blue-600 hover:bg-blue-700"
+                } text-white`}
+                disabled={
+                  loading ||
+                  (game && (game.team1Count || 0) > (game.team2Count || 0))
+                }
+                title={
+                  game && (game.team1Count || 0) > (game.team2Count || 0)
+                    ? "Este time tem mais jogadores. Escolha o Time 2 para equilibrar."
+                    : ""
+                }
+              >
+                {loading && teamSide === 1 ? "Inscrevendo..." : "Time 1"}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTeamSideSelect(2);
+                }}
+                className={`w-full font-bold py-3 px-4 rounded-lg transition-colors ${
+                  game && (game.team2Count || 0) > (game.team1Count || 0)
+                    ? "bg-gray-400 cursor-not-allowed opacity-50"
+                    : "bg-red-600 hover:bg-red-700"
+                } text-white`}
+                disabled={
+                  loading ||
+                  (game && (game.team2Count || 0) > (game.team1Count || 0))
+                }
+                title={
+                  game && (game.team2Count || 0) > (game.team1Count || 0)
+                    ? "Este time tem mais jogadores. Escolha o Time 1 para equilibrar."
+                    : ""
+                }
+              >
+                {loading && teamSide === 2 ? "Inscrevendo..." : "Time 2"}
+              </button>
+            </>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();

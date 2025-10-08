@@ -133,7 +133,15 @@ function Feed() {
         }
 
         setUserResults(usersAccum);
-        setPosts(postsAccum);
+
+        // Ordenar posts do mais recente para o mais antigo
+        const sortedPosts = postsAccum.sort((a, b) => {
+          const dateA = new Date(a.createdAt);
+          const dateB = new Date(b.createdAt);
+          return dateB - dateA; // Mais recente primeiro
+        });
+
+        setPosts(sortedPosts);
       } catch (err) {
         if (err.message === "aborted") return;
         console.error("Erro ao carregar resultados:", err);

@@ -30,6 +30,7 @@ public class GameService {
     private final OrganizationService organizationService;
     private final GameParticipantService gameParticipantService;
     private final UserContextService userContextService;
+    private final GameSpectatorRepository gameSpectatorRepository;
     
     public Page<GameResponse> findAll(Pageable pageable) {
         return gameRepository.findAll(pageable).map(this::convertToResponse);
@@ -113,10 +114,18 @@ public class GameService {
         game.setHasSpectators(request.getHasSpectators());
         game.setMinPlayers(request.getMinPlayers() != null ? request.getMinPlayers() : 6);
         game.setMaxPlayers(request.getMaxPlayers() != null ? request.getMaxPlayers() : 22);
+        
+        // Validate and set max spectators
         if (request.getHasSpectators()) {
-            game.setMinSpectators(5); // Minimum 5 spectators if enabled
+            // If maxSpectators is not provided, default to 5 (minimum)
+            Integer maxSpectators = request.getMaxSpectators() != null ? request.getMaxSpectators() : 5;
+            
+            if (maxSpectators < 5) {
+                throw new BusinessException("Maximum spectators must be at least 5 when spectators are enabled");
+            }
+            game.setMaxSpectators(maxSpectators);
         } else {
-            game.setMinSpectators(0);
+            game.setMaxSpectators(0);
         }
         
         game.setStatus(Game.GameStatus.SCHEDULED);
@@ -167,10 +176,18 @@ public class GameService {
         game.setHasSpectators(request.getHasSpectators());
         game.setMinPlayers(request.getMinPlayers() != null ? request.getMinPlayers() : 6);
         game.setMaxPlayers(request.getMaxPlayers() != null ? request.getMaxPlayers() : 22);
+        
+        // Validate and set max spectators
         if (request.getHasSpectators()) {
-            game.setMinSpectators(5); // Minimum 5 spectators if enabled
+            // If maxSpectators is not provided, default to 5 (minimum)
+            Integer maxSpectators = request.getMaxSpectators() != null ? request.getMaxSpectators() : 5;
+            
+            if (maxSpectators < 5) {
+                throw new BusinessException("Maximum spectators must be at least 5 when spectators are enabled");
+            }
+            game.setMaxSpectators(maxSpectators);
         } else {
-            game.setMinSpectators(0);
+            game.setMaxSpectators(0);
         }
         
         game.setStatus(Game.GameStatus.SCHEDULED);
@@ -425,7 +442,11 @@ public class GameService {
             response.setHasSpectators(game.getHasSpectators());
             response.setMinPlayers(game.getMinPlayers());
             response.setMaxPlayers(game.getMaxPlayers());
-            response.setMinSpectators(game.getMinSpectators());
+            response.setMaxSpectators(game.getMaxSpectators());
+            
+            // Get current spectator count
+            long spectatorCount = gameSpectatorRepository.countConfirmedSpectatorsByGame(game.getId());
+            response.setCurrentSpectatorCount((int) spectatorCount);
             
             // Calculate team counts and balance
             int team1Count = team1Players.size();

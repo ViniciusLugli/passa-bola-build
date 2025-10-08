@@ -8,14 +8,17 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - maridadb_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
     healthcheck:
       test:
-        ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot || exit 1"]
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent || exit 1",
+        ]
       interval: 10s
       timeout: 10s
-      retries: 10
-      start_period: 30s
+      retries: 20
+      start_period: 120s
     networks:
       - passa-bola-network
 
@@ -35,6 +38,12 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     networks:
       - passa-bola-network
 
@@ -99,7 +108,7 @@ services:
       - passa-bola-network
 
 volumes:
-  maridadb_data:
+  mariadb_data:
   prometheus_data:
   grafana_data:
 

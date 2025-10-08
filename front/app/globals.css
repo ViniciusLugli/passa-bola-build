@@ -14,3 +14,63 @@
 .animate-slide-in-right {
   animation: slide-in-right 0.3s ease-out;
 }
+
+/* Animação shimmer para efeito de brilho nos botões */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-12deg);
+  }
+}
+
+.group:hover .group-hover\:animate-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Melhorias para input de data no mobile */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0.25rem;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Melhorias para input de time no mobile */
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0.25rem;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Ajustes responsivos específicos para mobile */
+@media (max-width: 640px) {
+  input[type="date"],
+  input[type="time"] {
+    font-size: 16px !important; /* Previne zoom automático no iOS */
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}

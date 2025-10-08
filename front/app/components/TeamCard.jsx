@@ -27,19 +27,23 @@ function TeamCard({ team }) {
         overflow-hidden
       "
     >
-      <div className="p-5">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">{teamName}</h2>
+      <div className="p-3 sm:p-4 md:p-5">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-1.5 sm:mb-2 truncate">
+          {teamName}
+        </h2>
         {teamBio && (
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{teamBio}</p>
+          <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 leading-relaxed">
+            {teamBio}
+          </p>
         )}
-        <div className="flex items-center text-gray-500 text-sm">
+        <div className="flex items-center text-gray-500 text-xs sm:text-sm">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-4 h-4 mr-1"
+            className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 flex-shrink-0"
           >
             <path
               strokeLinecap="round"

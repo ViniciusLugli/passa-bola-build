@@ -22,6 +22,7 @@ export const useEditGameForm = (gameId) => {
     awayTeamId: "",
     description: "",
     hasSpectators: false,
+    maxSpectators: "",
     minPlayers: 6,
     maxPlayers: 22,
   });
@@ -58,6 +59,7 @@ export const useEditGameForm = (gameId) => {
         awayTeamId: response.awayTeamId || "",
         description: response.description || "",
         hasSpectators: response.hasSpectators || false,
+        maxSpectators: response.maxSpectators || "",
         minPlayers: response.minPlayers || 6,
         maxPlayers: response.maxPlayers || 22,
       });
@@ -104,11 +106,15 @@ export const useEditGameForm = (gameId) => {
     e.preventDefault();
     setSubmitting(true);
     setAlert(null);
+    
+    const requiredHostType =
+      gameData && gameData.gameType === "CUP" ? "ORGANIZATION" : "PLAYER";
 
     if (
       !user ||
       !gameData ||
-      String(user.id || user.playerId) !== String(gameData.hostId)
+      String(user.id || user.playerId) !== String(gameData.hostId) ||
+      String(user.userType || "").toUpperCase() !== requiredHostType
     ) {
       setAlert({
         type: "error",
@@ -158,6 +164,9 @@ export const useEditGameForm = (gameId) => {
         apiCall = api.games.updateFriendly;
         specificPayload.gameName = gameName;
         specificPayload.hasSpectators = hasSpectators;
+        specificPayload.maxSpectators = hasSpectators
+          ? parseInt(maxSpectators)
+          : undefined;
         specificPayload.minPlayers = parseInt(minPlayers);
         specificPayload.maxPlayers = parseInt(maxPlayers);
         break;
@@ -165,6 +174,9 @@ export const useEditGameForm = (gameId) => {
         apiCall = api.games.updateChampionship;
         specificPayload.gameName = gameName;
         specificPayload.hasSpectators = hasSpectators;
+        specificPayload.maxSpectators = hasSpectators
+          ? parseInt(maxSpectators)
+          : undefined;
         specificPayload.minPlayers = parseInt(minPlayers);
         specificPayload.maxPlayers = parseInt(maxPlayers);
         break;

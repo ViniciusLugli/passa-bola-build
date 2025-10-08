@@ -66,7 +66,6 @@ export const useCreateTeamForm = () => {
         return index === self.findIndex((p) => p.id === player.id);
       });
 
-      console.log("Seguidores mútuos encontrados:", uniqueMutual.length);
       setMutualFollows(uniqueMutual);
     } catch (err) {
       console.error("Erro ao buscar dados de seguidores:", err);

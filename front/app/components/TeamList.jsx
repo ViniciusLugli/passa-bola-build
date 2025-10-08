@@ -119,7 +119,14 @@ export default function TeamList() {
   }, [authLoading]);
 
   if (loading) {
-    return <p>Carregando equipes...</p>;
+    return (
+      <div className="flex items-center justify-center py-8 sm:py-12">
+        <div className="animate-spin rounded-full h-8 w-8 sm:h-10 sm:w-10 border-3 border-purple-500 border-t-transparent"></div>
+        <span className="ml-3 text-gray-600 font-medium text-sm sm:text-base">
+          Carregando equipes...
+        </span>
+      </div>
+    );
   }
 
   if (error) {
@@ -128,10 +135,10 @@ export default function TeamList() {
         ? error
         : error?.message || `${error?.status ?? ""} ${error?.statusText ?? ""}`;
     return (
-      <div>
-        <p className="text-red-500">Erro: {errMsg}</p>
+      <div className="text-center py-6 sm:py-8">
+        <p className="text-red-500 text-sm sm:text-base">⚠️ Erro: {errMsg}</p>
         {error?.body && (
-          <pre className="text-xs text-gray-600 mt-2">
+          <pre className="text-xs text-gray-600 mt-2 overflow-x-auto p-2 bg-gray-50 rounded">
             {JSON.stringify(error.body, null, 2)}
           </pre>
         )}
@@ -140,11 +147,17 @@ export default function TeamList() {
   }
 
   if (teams.length === 0) {
-    return <p>Nenhuma equipe encontrada.</p>;
+    return (
+      <div className="text-center py-8 sm:py-12">
+        <p className="text-gray-500 text-sm sm:text-base">
+          📋 Nenhuma equipe encontrada.
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
       {teams.map((team) => (
         <TeamCard key={team.id} team={team} />
       ))}

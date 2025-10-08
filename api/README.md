@@ -273,7 +273,9 @@ O sistema suporta **3 tipos distintos** de jogos, cada um com suas próprias reg
 
 1. **Sistema de Espectadores:**
    - `hasSpectators`: true/false
-   - Se `true`, mínimo de **5 espectadores** obrigatório
+   - Se `true`, campo `maxSpectators` é **opcional**
+   - Se não informado, **padrão é 5** (mínimo)
+   - Se informado, `maxSpectators` deve ser **no mínimo 5**
 
 2. **Limites de Jogadoras:**
    - **Mínimo:** 6 jogadoras (3x3)
@@ -310,6 +312,7 @@ Content-Type: application/json
   "venue": "Campo do Parque",
   "description": "Jogo 5x5 com torcida",
   "hasSpectators": true,
+  "maxSpectators": 20,
   "minPlayers": 10,
   "maxPlayers": 22
 }
@@ -329,7 +332,8 @@ Content-Type: application/json
   "hasSpectators": true,
   "minPlayers": 10,
   "maxPlayers": 22,
-  "minSpectators": 5,
+  "maxSpectators": 20,
+  "currentSpectatorCount": 0,
   "currentPlayerCount": 0,
   "team1Count": 0,
   "team2Count": 0,
@@ -368,6 +372,7 @@ Content-Type: application/json
   "venue": "Estádio Municipal",
   "description": "Primeira fase do campeonato",
   "hasSpectators": true,
+  "maxSpectators": 50,
   "minPlayers": 22,
   "maxPlayers": 22
 }
@@ -500,6 +505,99 @@ GET /api/game-participants/player/{playerId}?page=0&size=20
 
 ---
 
+### 👥 Sistema de Espectadores em Jogos
+
+#### **Para Jogos FRIENDLY e CHAMPIONSHIP:**
+
+Espectadores podem se inscrever para assistir jogos que aceitam público.
+
+#### **Confirmar Presença como Espectador:**
+```http
+POST /api/games/{id}/spectate
+Authorization: Bearer <token_spectator>
+```
+
+**Validações:**
+- ✅ Apenas usuários SPECTATOR podem se inscrever
+- ✅ Jogo deve ter `hasSpectators = true`
+- ✅ Apenas jogos FRIENDLY e CHAMPIONSHIP aceitam espectadores
+- ✅ Não pode exceder `maxSpectators` (mínimo 5 quando habilitado)
+- ✅ Não pode se inscrever duas vezes no mesmo jogo
+
+**Response:**
+```json
+{
+  "id": 789,
+  "gameId": 123,
+  "gameName": "Pelada do Sábado",
+  "spectatorId": 45,
+  "spectatorUsername": "joao_torcedor",
+  "spectatorName": "João Santos",
+  "status": "CONFIRMED",
+  "joinedAt": "2025-10-07T14:30:00",
+  "createdAt": "2025-10-07T14:30:00"
+}
+```
+
+#### **Cancelar Presença:**
+```http
+DELETE /api/games/{id}/spectate
+Authorization: Bearer <token_spectator>
+```
+
+#### **Ver Espectadores de um Jogo:**
+```http
+# Lista de espectadores confirmados (público)
+GET /api/games/{id}/spectators
+
+# Contagem de espectadores
+GET /api/games/{id}/spectators/count
+
+# Verificar se estou inscrito
+GET /api/games/{id}/spectators/is-subscribed
+Authorization: Bearer <token_spectator>
+```
+
+#### **Meus Jogos Inscritos:**
+```http
+GET /api/games/spectators/my-subscriptions?page=0&size=20
+Authorization: Bearer <token_spectator>
+```
+
+**Response:**
+```json
+{
+  "content": [
+    {
+      "id": 789,
+      "gameId": 123,
+      "gameName": "Pelada do Sábado",
+      "spectatorId": 45,
+      "spectatorUsername": "joao_torcedor",
+      "spectatorName": "João Santos",
+      "status": "CONFIRMED",
+      "joinedAt": "2025-10-07T14:30:00"
+    }
+  ],
+  "totalElements": 5,
+  "totalPages": 1
+}
+```
+
+#### **Regras de Negócio:**
+
+| Regra | Descrição |
+|-------|-----------|
+| **Tipo de Usuário** | Apenas SPECTATOR pode se inscrever como espectador |
+| **Tipo de Jogo** | Apenas FRIENDLY e CHAMPIONSHIP aceitam espectadores |
+| **Habilitação** | Jogo deve ter `hasSpectators = true` |
+| **Limite Mínimo** | Quando habilitado, mínimo de 5 espectadores |
+| **Limite Máximo** | Definido pelo criador do jogo (`maxSpectators`) |
+| **Duplicação** | Um espectador não pode se inscrever duas vezes |
+| **Contagem Automática** | `currentSpectatorCount` atualizado em tempo real |
+
+---
+
 ### 📊 Campos de Status do Jogo
 
 Todos os jogos FRIENDLY e CHAMPIONSHIP retornam:
@@ -509,7 +607,8 @@ Todos os jogos FRIENDLY e CHAMPIONSHIP retornam:
   "hasSpectators": true,
   "minPlayers": 10,
   "maxPlayers": 22,
-  "minSpectators": 5,
+  "maxSpectators": 20,
+  "currentSpectatorCount": 0,
   "currentPlayerCount": 8,
   "team1Count": 4,
   "team2Count": 4,
@@ -520,10 +619,11 @@ Todos os jogos FRIENDLY e CHAMPIONSHIP retornam:
 
 | Campo | Descrição |
 |-------|-----------|
-| `hasSpectators` | Se o jogo permite/requer espectadores |
+| `hasSpectators` | Se o jogo permite espectadores |
 | `minPlayers` | Mínimo de jogadoras para começar |
 | `maxPlayers` | Máximo de jogadoras permitido |
-| `minSpectators` | Mínimo de espectadores (5 se habilitado) |
+| `maxSpectators` | Máximo de espectadores permitido (mínimo 5 se habilitado) |
+| `currentSpectatorCount` | Total de espectadores confirmados |
 | `currentPlayerCount` | Total de jogadoras (team1 + team2) |
 | `team1Count` | Jogadoras no Time 1 |
 | `team2Count` | Jogadoras no Time 2 |
@@ -1185,7 +1285,8 @@ curl -X POST http://localhost:8080/api/games/friendly \
     "gameDate": "2025-10-15T14:00:00",
     "venue": "Campo do Parque",
     "description": "Jogo 5x5",
-    "hasSpectators": false,
+    "hasSpectators": true,
+    "maxSpectators": 15,
     "minPlayers": 10,
     "maxPlayers": 22
   }'

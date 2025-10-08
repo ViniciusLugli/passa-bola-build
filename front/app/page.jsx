@@ -5,14 +5,14 @@ import Image from "next/image";
 
 const decorations = [
   {
-    src: "/DecoB (tatica 1).svg",
+    src: "/DecoB-tatica-1.svg",
     className:
       "absolute top-[5%] left-[5%] w-24 h-24 transform rotate-[-15deg]",
     width: 96,
     height: 96,
   },
   {
-    src: "/DecoB (tatica 2).svg",
+    src: "/DecoB-tatica-2.svg",
     className:
       "absolute bottom-[8%] left-[12%] w-28 h-28 transform rotate-[30deg]",
     width: 112,
@@ -33,21 +33,21 @@ const decorations = [
     height: 40,
   },
   {
-    src: "/Deco (linha).svg",
+    src: "/Deco-linha.svg",
     className:
       "absolute top-1/2 left-1/2 w-48 h-48 transform -translate-x-1/2 -translate-y-1/2 opacity-20",
     width: 192,
     height: 192,
   },
   {
-    src: "/DecoB (tatica 1).svg",
+    src: "/DecoB-tatica-1.svg",
     className:
       "absolute bottom-[5%] right-[5%] w-16 h-16 transform rotate-[45deg]",
     width: 64,
     height: 64,
   },
   {
-    src: "/DecoB (tatica 2).svg",
+    src: "/DecoB-tatica-2.svg",
     className:
       "absolute top-[60%] right-[15%] w-20 h-20 transform rotate-[-50deg]",
     width: 80,
@@ -84,7 +84,7 @@ export default function HomePage() {
         p-4 sm:p-6 md:p-8 lg:p-12
       "
     >
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 select-none">
         {decorations.map((deco, index) => (
           <Image
             key={index}
@@ -94,6 +94,8 @@ export default function HomePage() {
             width={deco.width}
             height={deco.height}
             loading="lazy"
+            draggable={false}
+            style={{ userSelect: "none" }}
           />
         ))}
       </div>

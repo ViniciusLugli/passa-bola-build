@@ -7,7 +7,7 @@ import { brazilianStates } from "@/app/lib/brazilianStates";
 
 export const useRegisterForm = () => {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, login } = useAuth();
   const searchParams = useSearchParams();
   const role = searchParams.get("role");
 
@@ -135,13 +135,14 @@ export const useRegisterForm = () => {
         return;
     }
 
-    console.log("📤 Payload sendo enviado:", JSON.stringify(payload, null, 2));
-    console.log("🎯 API Role:", apiRole);
+    // debug logs removed
 
     try {
       const res = await register(payload, apiRole);
-      console.log("✅ Registro bem-sucedido:", res);
-      router.push("/login");
+
+      // Fazer login automaticamente após o registro bem-sucedido
+      await login({ email: formData.email, password: formData.password });
+
       return res;
     } catch (err) {
       console.error("❌ Erro no registro:", err);

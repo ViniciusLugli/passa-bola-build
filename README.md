@@ -128,14 +128,53 @@ Aqui estão os endereços para acessar cada parte da aplicação:
   - **Usuário:** `admin`
   - **Senha:** `admin`
 
+## ☁️ Deploy na Azure
+
+Quer fazer deploy em produção na **Microsoft Azure**?
+
+📘 **[Guia Completo de Deploy Azure](DEPLOY-AZURE.md)**
+
+### Deploy Rápido
+
+```bash
+# 1. Configure as credenciais
+cp .env.azure.example .env.azure
+nano .env.azure
+
+# 2. Use o menu interativo
+./azure-deploy.sh
+
+# Ou execute os scripts individualmente:
+cd azure-scripts
+./01-deploy-infrastructure.sh  # Cria infraestrutura
+./02-deploy-images.sh          # Build e push das imagens
+./03-deploy-services.sh        # Deploy dos serviços
+```
+
+**Recursos criados na Azure:**
+
+- ✅ Azure Container Apps (API, Frontend, Chatbot)
+- ✅ Azure Database for MySQL
+- ✅ Azure Container Registry
+- ✅ Application Insights (Monitoramento)
+
+**Custo estimado:** ~$35-65/mês (ou use os $200 de créditos gratuitos!)
+
 ## 📂 Estrutura do Projeto
 
 ```
 passa-bola/
-├── ☕ api/            # Backend em Spring Boot
-├── 🐍 chatbot/        # Chatbot em Python/Flask
-├── ⚛️ front/          # Frontend em Next.js
-├── 📊 prometheus/     # Configuração do Prometheus
-├── 🐳 docker-compose.yml # Orquestração dos containers
-└── 📄 README.md       # Este arquivo
+├── ☕ api/                      # Backend em Spring Boot
+├── 🐍 chatbot/                  # Chatbot em Python/Flask
+├── ⚛️ front/                    # Frontend em Next.js
+├── 📊 prometheus/               # Configuração do Prometheus
+├── 🚀 azure-scripts/            # Scripts de deploy Azure
+├── 🐳 docker-compose.yml        # Orquestração dos containers
+├── ⚙️  azure-config.json        # Configuração Azure
+├── 📘 DEPLOY-AZURE.md          # Guia de deploy Azure
+└── 📄 README.md                # Este arquivo
+```
+
+```
+
 ```
