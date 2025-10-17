@@ -172,7 +172,3 @@ passa-bola/
 ├── 📘 DEPLOY-AZURE.md          # Guia de deploy Azure
 └── 📄 README.md                # Este arquivo
 ```
-
-```
-
-```
