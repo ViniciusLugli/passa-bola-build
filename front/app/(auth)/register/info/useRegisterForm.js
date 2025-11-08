@@ -43,9 +43,7 @@ export const useRegisterForm = () => {
     {
       name: "name",
       type: "text",
-      placeholder: isOrganization
-        ? "Nome da Organização *"
-        : "Nome Completo *",
+      placeholder: isOrganization ? "Nome da Organização *" : "Nome Completo *",
       required: true,
     },
     {
@@ -57,7 +55,12 @@ export const useRegisterForm = () => {
     ...(isOrganization
       ? [
           { name: "cnpj", type: "text", placeholder: "CNPJ *", required: true },
-          { name: "city", type: "text", placeholder: "Cidade *", required: true },
+          {
+            name: "city",
+            type: "text",
+            placeholder: "Cidade *",
+            required: true,
+          },
           {
             name: "state",
             type: "select",
@@ -151,45 +154,11 @@ export const useRegisterForm = () => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    const updatedData = { ...formData, [name]: value };
-    setFormData(updatedData);
+    setFormData({ ...formData, [name]: value });
 
     if (error) setError(null);
+    // Remove o erro do campo quando o usuário começa a digitar
     resetFieldError(name);
-
-    setFieldErrors((prev) => {
-      const nextErrors = { ...prev };
-
-      if (name === "email") {
-        const message = validateEmail(value);
-        if (message) nextErrors.email = message;
-        else delete nextErrors.email;
-      }
-
-      if (name === "password") {
-        const message = validatePasswordValue(value);
-        if (message) nextErrors.password = message;
-        else delete nextErrors.password;
-
-        if (updatedData.confirmPassword) {
-          if (value !== updatedData.confirmPassword) {
-            nextErrors.confirmPassword = "As senhas não coincidem.";
-          } else {
-            delete nextErrors.confirmPassword;
-          }
-        }
-      }
-
-      if (name === "confirmPassword") {
-        if (value !== updatedData.password) {
-          nextErrors.confirmPassword = "As senhas não coincidem.";
-        } else {
-          delete nextErrors.confirmPassword;
-        }
-      }
-
-      return nextErrors;
-    });
   };
 
   const removeEmptyFields = (obj) => {

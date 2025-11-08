@@ -17,8 +17,9 @@ import {
   isImageFile,
 } from "@/app/lib/fileUtils";
 import useFileUpload from "@/app/hooks/useFileUpload";
+import { getApiUrl } from "@/app/lib/apiUrl";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_URL = getApiUrl();
 
 /**
  * File gallery component for viewing uploaded files

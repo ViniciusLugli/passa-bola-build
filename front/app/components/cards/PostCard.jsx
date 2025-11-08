@@ -9,6 +9,7 @@ import { api } from "@/app/lib/api";
 import { useAuth } from "@/app/context/AuthContext";
 import { useToast } from "@/app/context/ToastContext";
 import CommentSection from "@/app/components/comments/CommentSection";
+import { getApiUrl } from "@/app/lib/apiUrl";
 import { normalizeRemoteUrl } from "@/app/lib/fileUtils";
 
 function PostCard({ post, showComments = true }) {
@@ -38,9 +39,12 @@ function PostCard({ post, showComments = true }) {
   useEffect(() => {
     // If the post doesn't include an imageUrl, try to fetch images for the post
     if (post && !post.imageUrl) {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+      const API_URL = getApiUrl();
       let mounted = true;
-      const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("authToken")
+          : null;
 
       const loadImages = async () => {
         try {
@@ -112,7 +116,10 @@ function PostCard({ post, showComments = true }) {
           onClick={(e) => e.stopPropagation()}
         >
           <Image
-            src={post.authorProfilePhotoUrl || "/icons/user-default.png"}
+            src={
+              normalizeRemoteUrl(post.authorProfilePhotoUrl) ||
+              "/icons/user-default.png"
+            }
             alt="Avatar do autor"
             fill
             className="object-cover"
@@ -125,7 +132,7 @@ function PostCard({ post, showComments = true }) {
             onClick={(e) => e.stopPropagation()}
           >
             <h4 className="font-bold text-lg text-primary leading-tight hover:underline cursor-pointer">
-              {post.authorUsername} {" "}
+              {post.authorUsername}{" "}
             </h4>
           </Link>
           <p className="text-secondary text-sm">

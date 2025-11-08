@@ -59,13 +59,16 @@ export function ChatProvider({ children }) {
     }
 
     // Constrói a URL do WebSocket a partir da API URL
-    const API_URL =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-    const BASE_URL = API_URL.replace(/\/api$/, ""); // Remove /api do final
+    const BASE_URL = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+    ).replace(/\/api$/, "");
     const WS_URL = `${BASE_URL}/ws-chat-sockjs`;
 
     const stompClient = new Client({
-      webSocketFactory: () => new SockJS(WS_URL),
+      webSocketFactory: () =>
+        new SockJS(WS_URL, null, {
+          transports: ["websocket", "xhr-streaming", "xhr-polling"],
+        }),
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },

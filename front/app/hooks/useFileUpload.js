@@ -3,8 +3,10 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/app/context/ToastContext";
 import { useAuth } from "@/app/context/AuthContext";
+import { logRequestResponse } from "../lib/logger";
+import { getApiUrl } from "../lib/apiUrl";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+const API_URL = getApiUrl();
 
 // Helper to get current auth token
 const getAuthToken = () => {

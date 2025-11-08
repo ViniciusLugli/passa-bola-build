@@ -8,6 +8,7 @@ import { api } from "@/app/lib/api";
 import CommentSection from "@/app/components/comments/CommentSection";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { normalizeRemoteUrl } from "@/app/lib/fileUtils";
+import { getApiUrl } from "@/app/lib/apiUrl";
 
 export default function PostDetailPage() {
   const params = useParams();
@@ -66,8 +67,9 @@ export default function PostDetailPage() {
     }
 
     let mounted = true;
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-    const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+    const API_URL = getApiUrl();
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
 
     const loadImages = async () => {
       try {
@@ -108,7 +110,9 @@ export default function PostDetailPage() {
   if (loading) {
     return (
       <main className="container mx-auto p-6 max-w-3xl">
-        <div className="text-center text-secondary">Carregando publicação...</div>
+        <div className="text-center text-secondary">
+          Carregando publicação...
+        </div>
       </main>
     );
   }
@@ -116,7 +120,9 @@ export default function PostDetailPage() {
   if (error || !post) {
     return (
       <main className="container mx-auto p-6 max-w-3xl">
-        <div className="text-center text-secondary">{error || "Publicação não encontrada."}</div>
+        <div className="text-center text-secondary">
+          {error || "Publicação não encontrada."}
+        </div>
         <div className="mt-4 text-center">
           <Link href="/feed" className="text-accent hover:underline">
             Voltar ao Feed
@@ -129,7 +135,10 @@ export default function PostDetailPage() {
   return (
     <main className="container mx-auto p-6 max-w-3xl">
       <div className="mb-4 flex items-center gap-3">
-        <button onClick={handleBack} className="p-2 rounded-md hover:bg-surface-muted">
+        <button
+          onClick={handleBack}
+          className="p-2 rounded-md hover:bg-surface-muted"
+        >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-2xl font-bold">Publicação</h1>
@@ -147,12 +156,18 @@ export default function PostDetailPage() {
             />
           </div>
           <div>
-            <div className="font-bold text-lg text-primary">{post.authorUsername}</div>
-            <div className="text-sm text-secondary">{new Date(post.createdAt).toLocaleString()}</div>
+            <div className="font-bold text-lg text-primary">
+              {post.authorUsername}
+            </div>
+            <div className="text-sm text-secondary">
+              {new Date(post.createdAt).toLocaleString()}
+            </div>
           </div>
         </header>
 
-        <div className="text-primary mb-4 whitespace-pre-wrap wrap-break-word">{post.content}</div>
+        <div className="text-primary mb-4 whitespace-pre-wrap wrap-break-word">
+          {post.content}
+        </div>
 
         {(imageSrc || loadingImage) && (
           <div className="relative w-full h-80 rounded-lg overflow-hidden mb-4">
@@ -165,7 +180,9 @@ export default function PostDetailPage() {
         )}
 
         <div className="flex items-center justify-between">
-          <div className="text-sm text-secondary">{post.totalLikes || 0} curtidas</div>
+          <div className="text-sm text-secondary">
+            {post.totalLikes || 0} curtidas
+          </div>
           <div>
             <button
               onClick={handleCommentClick}
