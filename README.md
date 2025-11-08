@@ -50,6 +50,17 @@ cd passa-bola
 
 A maneira mais fácil de rodar o projeto é com o Docker Compose, que orquestra todos os serviços para você.
 
+#### 📦 Configuração do Azure Blob Storage (Opcional)
+
+Se você tem acesso ao Azure Blob Storage para desenvolvimento, sincronize as variáveis locais:
+
+```bash
+# Se você já tem azure-storage-dev.env configurado
+./sync-local-env.sh
+```
+
+#### 🚀 Iniciar todos os serviços
+
 ```bash
 docker-compose up --build -d
 ```
@@ -126,37 +137,58 @@ Aqui estão os endereços para acessar cada parte da aplicação:
   - **Usuário:** `admin`
   - **Senha:** `admin`
 
+### 🔧 Configuração de Variáveis
+
+O projeto usa um arquivo `.env` para configuração local. As variáveis são automaticamente aplicadas no Docker Compose.
+
+**📁 Azure Blob Storage (Opcional):**
+Se você tem acesso ao Azure Blob Storage, pode sincronizar as credenciais:
+
+```bash
+# Sincronizar variáveis do Azure Storage de desenvolvimento
+./sync-local-env.sh
+
+# Reiniciar containers para aplicar as novas variáveis
+docker-compose down && docker-compose up -d
+```
+
+**🔐 Variáveis importantes:**
+
+- `AZURE_STORAGE_ACCOUNT_NAME`: Nome da conta do Azure Storage
+- `AZURE_STORAGE_ACCOUNT_KEY`: Chave de acesso ao storage
+- `JWT_SECRET`: Chave secreta para JWT (gerada automaticamente no deploy)
+- `MYSQL_ROOT_PASSWORD`: Senha do banco local (padrão: `root`)
+
 ## ☁️ Deploy na Azure
 
 Quer fazer deploy em produção na **Microsoft Azure**?
 
 📘 **[Guia Completo de Deploy Azure](DEPLOY-AZURE.md)**
 
-### Deploy Rápido
+### 🚀 Deploy Rápido
 
 ```bash
-# 1. Configure as credenciais
-cp .env.azure.example .env.azure
-nano .env.azure
-
-# 2. Use o menu interativo
+# 1. Use o menu interativo (recomendado)
 ./azure-deploy.sh
 
-# Ou execute os scripts individualmente:
-cd azure-scripts
-./01-deploy-infrastructure.sh  # Cria infraestrutura
-./02-deploy-images.sh          # Build e push das imagens
-./03-deploy-services.sh        # Deploy dos serviços
+# 2. Opções do menu:
+# - Opção 7: Deploy completo (infraestrutura + imagens + serviços + variáveis + storage)
+# - Opção 4: Configurar apenas variáveis de ambiente (inclui Blob Storage se disponível)
+# - Opção 5: Deploy apenas do Blob Storage integrado
 ```
 
-**Recursos criados na Azure:**
+**✨ O que é configurado automaticamente:**
 
-- ✅ Azure Container Apps (API, Frontend, Chatbot)
-- ✅ Azure Database for MySQL
-- ✅ Azure Container Registry
-- ✅ Application Insights (Monitoramento)
+- ✅ **Azure Container Apps** (API, Frontend, Chatbot)
+- ✅ **Azure Database for MySQL** com credenciais seguras
+- ✅ **Azure Container Registry** para as imagens Docker
+- ✅ **Azure Blob Storage** para upload de arquivos
+- ✅ **Application Insights** para monitoramento
+- ✅ **Variáveis de ambiente** automáticas (DB + JWT + Blob Storage)
 
-**Custo estimado:** ~$35-65/mês (ou use os $200 de créditos gratuitos!)
+**🔐 Segurança:** Todas as credenciais são armazenadas como secrets seguros no Azure.
+
+**💰 Custo estimado:** ~$35-65/mês (ou use os $200 de créditos gratuitos!)
 
 ## 📂 Estrutura do Projeto
 

@@ -1,5 +1,368 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* Remove controles nativos de senha do navegador */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* Chat scroll optimizations */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--color-accent), 0.2) transparent;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--color-accent), 0.2);
+  border-radius: 3px;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--color-accent), 0.4);
+}
+
+/* Mobile touch optimizations */
+@media (max-width: 768px) {
+  .chat-scroll::-webkit-scrollbar {
+    display: none; /* Hide scrollbar on mobile for cleaner look */
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+:root {
+  color-scheme: light;
+
+  /* Superfícies */
+  --color-page: 244 247 252; /* #f4f7fc */
+  --color-surface: 255 255 255; /* #ffffff */
+  --color-surface-muted: 246 248 252; /* #f6f8fc */
+  --color-surface-elevated: 249 244 255; /* #f9f4ff */
+
+  /* Bordas */
+  --color-border-subtle: 224 227 235; /* #e0e3eb */
+  --color-border-strong: 203 208 221; /* #cbd0dd */
+
+  /* Tipografia */
+  --color-text-primary: 17 24 39; /* #111827 */
+  --color-text-secondary: 79 86 105; /* #4f5669 */
+  --color-text-tertiary: 113 121 137; /* #717989 */
+  --color-text-inverse: 255 255 255; /* #ffffff */
+
+  /* Marca */
+  --color-accent: 109 40 217; /* #6d28d9 */
+  --color-accent-strong: 88 28 180; /* #581cb4 */
+  --color-accent-soft: 229 219 255; /* #e5dbff */
+  --color-accent-contrast: 255 255 255; /* texto sobre o roxo */
+  --color-onbrand-hover: 233 224 255; /* tom claro para hover no topo */
+
+  /* Estados */
+  --color-success: 16 185 129; /* #10b981 */
+  --color-danger: 239 68 68; /* #ef4444 */
+
+  /* Sombras */
+  --shadow-color: 15 23 42; /* #0f172a */
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --color-page: 9 11 22; /* #090b16 */
+  --color-surface: 21 27 46; /* #151b2e */
+  --color-surface-muted: 30 38 60; /* #1e263c */
+  --color-surface-elevated: 46 58 88; /* #2e3a58 */
+
+  --color-border-subtle: 37 46 68; /* #252e44 */
+  --color-border-strong: 74 90 120; /* #4a5a78 */
+
+  --color-text-primary: 233 238 255; /* #e9eeff */
+  --color-text-secondary: 187 196 222; /* #bbc4de */
+  --color-text-tertiary: 146 157 186; /* #929dba */
+  --color-text-inverse: 12 16 24; /* #0c1018 */
+
+  --color-accent: 109 40 217; /* #6d28d9 */
+  --color-accent-strong: 88 28 180; /* #581cb4 */
+  --color-accent-soft: 50 26 93; /* #321a5d */
+  --color-accent-contrast: 245 245 255; /* texto sobre o roxo */
+  --color-onbrand-hover: 206 189 255; /* hover mais claro sobre o topo */
+
+  --color-success: 34 197 94; /* #22c55e */
+  --color-danger: 248 113 113; /* #f87171 */
+
+  --shadow-color: 4 7 16; /* #040710 */
+}
+
+.dark .dark\:bg-gray-750 {
+  background-color: rgb(var(--color-surface-elevated));
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: rgb(var(--color-page));
+    color: rgb(var(--color-text-primary));
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  a {
+    color: rgb(var(--color-accent));
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: color-mix(
+      in srgb,
+      rgb(var(--color-accent)),
+      rgb(var(--color-text-inverse)) 18%
+    );
+  }
+
+  ::selection {
+    background-color: rgb(var(--color-accent));
+    color: rgb(var(--color-accent-contrast));
+  }
+
+  html.dark .bg-white {
+    background-color: rgb(var(--color-surface));
+  }
+
+  html.dark .hover\:bg-white:hover {
+    background-color: rgb(var(--color-surface-elevated));
+  }
+
+  html.dark .bg-gray-50,
+  html.dark .bg-gray-100,
+  html.dark .bg-gray-200 {
+    background-color: rgb(var(--color-surface-muted));
+  }
+
+  html.dark .hover\:bg-gray-50:hover,
+  html.dark .hover\:bg-gray-100:hover {
+    background-color: rgb(var(--color-surface-elevated));
+  }
+
+  html.dark .border-gray-200,
+  html.dark .border-gray-300,
+  html.dark .border-zinc-300,
+  html.dark .border-zinc-200 {
+    border-color: rgb(var(--color-border-strong));
+  }
+
+  html.dark .text-gray-900,
+  html.dark .text-gray-800 {
+    color: rgb(var(--color-text-primary));
+  }
+
+  html.dark .text-gray-700,
+  html.dark .text-gray-600,
+  html.dark .text-gray-500 {
+    color: rgb(var(--color-text-secondary));
+  }
+
+  html.dark .text-gray-400,
+  html.dark .text-zinc-400 {
+    color: rgb(var(--color-text-tertiary));
+  }
+
+  html.dark .bg-gray-300 {
+    background-color: rgb(var(--color-surface-elevated));
+  }
+
+  /* Força cor zinc-500 para elementos específicos no modo claro */
+  html:not(.dark) .text-zinc-500 {
+    color: #71717a !important;
+  }
+
+  html:not(.dark) .text-zinc-700 {
+    color: #3f3f46 !important;
+  }
+}
+
+@layer utilities {
+  .bg-page {
+    background-color: rgb(var(--color-page));
+  }
+
+  .bg-surface {
+    background-color: rgb(var(--color-surface));
+  }
+
+  .bg-surface-muted {
+    background-color: rgb(var(--color-surface-muted));
+  }
+
+  .bg-surface-elevated {
+    background-color: rgb(var(--color-surface-elevated));
+  }
+
+  .border-default {
+    border-color: rgb(var(--color-border-subtle));
+  }
+
+  .border-strong {
+    border-color: rgb(var(--color-border-strong));
+  }
+
+  .text-primary {
+    color: rgb(var(--color-text-primary));
+  }
+
+  .text-secondary {
+    color: rgb(var(--color-text-secondary));
+  }
+
+  .text-tertiary {
+    color: rgb(var(--color-text-tertiary));
+  }
+
+  .text-inverse {
+    color: rgb(var(--color-text-inverse));
+  }
+
+  .text-accent {
+    color: rgb(var(--color-accent));
+  }
+
+  .text-accent-strong {
+    color: rgb(var(--color-accent-strong));
+  }
+
+  .text-on-brand {
+    color: rgb(var(--color-accent-contrast));
+  }
+
+  .hover-text-on-brand:hover {
+    color: rgb(var(--color-onbrand-hover));
+  }
+
+  .bg-accent {
+    background-color: rgb(var(--color-accent));
+    color: rgb(var(--color-accent-contrast));
+  }
+
+  .bg-accent-strong {
+    background-color: rgb(var(--color-accent-strong));
+    color: rgb(var(--color-accent-contrast));
+  }
+
+  .bg-accent-soft {
+    background-color: rgb(var(--color-accent-soft));
+  }
+
+  .ring-accent {
+    --tw-ring-color: rgb(var(--color-accent));
+  }
+
+  .text-success {
+    color: rgb(var(--color-success));
+  }
+
+  .text-danger {
+    color: rgb(var(--color-danger));
+  }
+
+  .bg-success-soft {
+    background-color: color-mix(in srgb, rgb(var(--color-success)), white 85%);
+  }
+
+  .bg-danger-soft {
+    background-color: color-mix(in srgb, rgb(var(--color-danger)), white 90%);
+  }
+
+  .border-success {
+    border-color: rgb(var(--color-success));
+  }
+
+  .border-danger {
+    border-color: rgb(var(--color-danger));
+  }
+
+  .ring-success {
+    --tw-ring-color: rgb(var(--color-success));
+  }
+
+  .ring-danger {
+    --tw-ring-color: rgb(var(--color-danger));
+  }
+
+  .focus\:border-accent:focus {
+    border-color: rgb(var(--color-accent));
+  }
+
+  .focus\:ring-accent:focus {
+    --tw-ring-color: rgb(var(--color-accent));
+  }
+
+  .focus\:border-danger:focus {
+    border-color: rgb(var(--color-danger));
+  }
+
+  .focus\:ring-danger:focus {
+    --tw-ring-color: rgb(var(--color-danger));
+  }
+
+  .focus\:border-success:focus {
+    border-color: rgb(var(--color-success));
+  }
+
+  .focus\:ring-success:focus {
+    --tw-ring-color: rgb(var(--color-success));
+  }
+
+  .border-accent {
+    border-color: rgb(var(--color-accent));
+  }
+
+  .border-accent-strong {
+    border-color: rgb(var(--color-accent-strong));
+  }
+
+  .shadow-elevated {
+    box-shadow: 0 25px 50px -24px rgb(var(--shadow-color) / 0.6);
+  }
+
+  .bg-brand-gradient {
+    background-image: linear-gradient(135deg, #581cb4 0%, #6d28d9 100%);
+    color: rgb(var(--color-accent-contrast));
+  }
+
+  .bg-empty-gradient {
+    background: linear-gradient(
+      135deg,
+      rgb(var(--color-surface-muted)) 0%,
+      rgb(var(--color-surface-elevated)) 100%
+    );
+  }
+}
+
+/* ================================
+   Animações customizadas
+   ================================ */
 @keyframes slide-in-right {
   from {
     transform: translateX(100%);
@@ -29,48 +392,457 @@
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Melhorias para input de data no mobile */
-input[type="date"] {
-  -webkit-appearance: none;
-  appearance: none;
+/* Animação shimmer para skeleton loading */
+@keyframes shimmer-skeleton {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.6;
-  padding: 0.25rem;
+.skeleton {
+  background: linear-gradient(
+    to right,
+    rgb(var(--color-surface-muted)) 0%,
+    rgb(var(--color-surface-elevated)) 50%,
+    rgb(var(--color-surface-muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-skeleton 1.5s infinite linear;
+  will-change: background-position;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
+.contain-paint {
+  contain: paint;
 }
 
-/* Melhorias para input de time no mobile */
-input[type="time"] {
-  -webkit-appearance: none;
-  appearance: none;
+.contain-layout {
+  contain: layout;
 }
 
-input[type="time"]::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.6;
-  padding: 0.25rem;
+.contain-size {
+  contain: size;
 }
 
-input[type="time"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
+.contain-strict {
+  contain: strict;
 }
 
-/* Ajustes responsivos específicos para mobile */
-@media (max-width: 640px) {
-  input[type="date"],
-  input[type="time"] {
-    font-size: 16px !important; /* Previne zoom automático no iOS */
+.game-card,
+.post-card,
+.team-card,
+.notification-card {
+  contain: layout style paint;
+}
+
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border: 3px solid rgba(var(--color-accent), 0.2);
+  border-top-color: rgb(var(--color-accent));
+  animation: spin-slow 1s linear infinite;
+  will-change: transform;
+}
+
+/* Pulse animation for loading states */
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Fade in animation for content loading */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Fade in from bottom - for cards and list items */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+/* Stagger animation for lists */
+.stagger-fade-in > * {
+  animation: fade-in-up 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+.stagger-fade-in > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.stagger-fade-in > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.stagger-fade-in > *:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.stagger-fade-in > *:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.stagger-fade-in > *:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.stagger-fade-in > *:nth-child(n + 6) {
+  animation-delay: 0.3s;
+}
+
+/* Scale in animation for modals */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scale-in {
+  animation: scale-in 0.2s ease-out;
+}
+
+/* Slide in from right - for notifications/toasts */
+@keyframes slide-in-right-new {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-right-new {
+  animation: slide-in-right-new 0.3s ease-out;
+}
+
+/* Skeleton loading with better performance */
+.skeleton-text {
+  height: 0.875rem; /* 14px */
+  background: linear-gradient(
+    to right,
+    rgb(var(--color-surface-muted)) 0%,
+    rgb(var(--color-surface-elevated)) 50%,
+    rgb(var(--color-surface-muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-skeleton 1.5s infinite linear;
+  border-radius: 0.25rem;
+  will-change: background-position;
+}
+
+.skeleton-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: linear-gradient(
+    to right,
+    rgb(var(--color-surface-muted)) 0%,
+    rgb(var(--color-surface-elevated)) 50%,
+    rgb(var(--color-surface-muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-skeleton 1.5s infinite linear;
+  will-change: background-position;
+}
+
+.skeleton-button {
+  height: 2.5rem;
+  background: linear-gradient(
+    to right,
+    rgb(var(--color-surface-muted)) 0%,
+    rgb(var(--color-surface-elevated)) 50%,
+    rgb(var(--color-surface-muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-skeleton 1.5s infinite linear;
+  border-radius: 0.75rem;
+  will-change: background-position;
+}
+
+/* ================================
+   Smooth Transitions
+   ================================ */
+/* Default smooth transitions for interactive elements */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-smooth-fast {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-smooth-slow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover lift effect for cards */
+.hover-lift {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(var(--shadow-color), 0.3);
+}
+
+/* Scale animation for buttons */
+.hover-scale {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-scale:active {
+  transform: scale(0.95);
+}
+
+/* ================================
+   Accessibility Enhancements
+   ================================ */
+/* Focus indicators - visible and accessible */
+.focus-visible:focus-visible {
+  outline: 3px solid rgb(var(--color-accent));
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+/* High contrast focus ring for better visibility */
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 3px rgb(var(--color-accent) / 0.5);
+  outline: none;
+}
+
+/* Skip to main content link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: rgb(var(--color-accent));
+  color: rgb(var(--color-accent-contrast));
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  z-index: 100;
+  transition: top 0.2s ease-in-out;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* Screen reader only class */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ARIA live regions styling */
+[role="status"],
+[role="alert"] {
+  position: relative;
+}
+
+/* Touch target size - minimum 44x44px for WCAG 2.1 AA */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .border-default {
+    border-width: 2px;
   }
 
-  input[type="date"]::-webkit-calendar-picker-indicator,
-  input[type="time"]::-webkit-calendar-picker-indicator {
-    width: 1.25rem;
-    height: 1.25rem;
+  .focus-visible:focus-visible {
+    outline-width: 4px;
+  }
+}
+
+/* ================================
+   Suporte para Reduced Motion
+   ================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-bounce,
+  .skeleton,
+  .pulse,
+  .hover-lift,
+  .hover-scale {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .hover-lift:hover,
+  .hover-scale:hover {
+    transform: none !important;
+  }
+}
+
+/* ================================
+   Custom Scrollbars
+   ================================ */
+/* Custom scrollbar for Webkit browsers (Chrome, Safari, Edge) */
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-accent) / 0.2);
+    border-radius: 10px;
+    transition: background-color 0.2s ease;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-accent) / 0.3);
+  }
+
+  .scrollbar-thumb-accent\/20::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-accent) / 0.2);
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Firefox scrollbar support */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-accent) / 0.2) transparent;
+  }
+
+  /* Ensure smooth scrolling */
+  .overflow-y-auto,
+  .overflow-x-auto {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ================================
+   Chat System Optimizations
+   ================================ */
+@layer utilities {
+  /* Chat scroll optimization */
+  .chat-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-accent) / 0.2) transparent;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chat-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .chat-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+
+  .chat-scroll::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-accent) / 0.2);
+    border-radius: 10px;
+    transition: background-color 0.2s ease;
+  }
+
+  .chat-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-accent) / 0.3);
+  }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 768px) {
+    .chat-scroll::-webkit-scrollbar {
+      display: none; /* Hide scrollbar on mobile */
+    }
+
+    .chat-scroll {
+      -ms-overflow-style: none; /* IE/Edge */
+      scrollbar-width: none; /* Firefox */
+    }
+  }
+
+  /* Prevent layout shift during transitions */
+  .chat-transition {
+    will-change: transform, opacity, width;
+    transform: translateZ(0); /* Force GPU acceleration */
+  }
+
+  /* Touch optimization for mobile buttons */
+  .touch-optimized {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
   }
 }

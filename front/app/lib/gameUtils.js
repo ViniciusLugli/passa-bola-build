@@ -1,4 +1,6 @@
 export const getGameTypeLabel = (gameType) => {
+  if (!gameType) return "Indefinido";
+
   switch (gameType) {
     case "FRIENDLY":
       return "Amistoso";

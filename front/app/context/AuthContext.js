@@ -69,9 +69,29 @@ export const AuthProvider = ({ children }) => {
             return;
           }
 
+          // Extract userId from JWT token if not present in stored user
+          if (!basicUserData.userId) {
+            try {
+              const payload = JSON.parse(atob(storedToken.split(".")[1]));
+              basicUserData.userId = payload.userId || payload.sub;
+              console.log(
+                "[AuthContext] Extracted userId from token:",
+                basicUserData.userId
+              );
+            } catch (e) {
+              console.error("[AuthContext] Failed to decode JWT:", e);
+              basicUserData.userId = basicUserData.id; // Fallback to profile ID
+            }
+          }
+
           const fullProfileData = await fetchFullProfileData(basicUserData);
 
-          setUser({ ...basicUserData, ...fullProfileData });
+          const completeUserData = { ...basicUserData, ...fullProfileData };
+
+          // Update localStorage with userId if it was missing
+          localStorage.setItem("user", JSON.stringify(completeUserData));
+
+          setUser(completeUserData);
           setIsAuthenticated(true);
         }
       } catch (error) {
@@ -92,9 +112,20 @@ export const AuthProvider = ({ children }) => {
 
       setAuthToken(token);
 
+      // Extract userId from JWT token
+      let userIdFromToken = null;
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        userIdFromToken = payload.userId || payload.sub;
+        console.log("[AuthContext] JWT Payload userId:", userIdFromToken);
+      } catch (e) {
+        console.error("[AuthContext] Failed to decode JWT:", e);
+      }
+
       const userBasicDataWithIdAndType = {
         ...restOfResponse,
         id: profileId,
+        userId: userIdFromToken || profileId, // Snowflake ID from JWT
         userType: role.toUpperCase(),
       };
 
@@ -150,6 +181,46 @@ export const AuthProvider = ({ children }) => {
     setLoginErrorMessage(null);
   }, []);
 
+  // Update user profile data in context and localStorage
+  const updateUserProfile = useCallback(
+    async (updatedData) => {
+      try {
+        // Merge updated data with existing user data
+        const updatedUser = { ...user, ...updatedData };
+
+        // Update state
+        setUser(updatedUser);
+
+        // Update localStorage
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+
+        return updatedUser;
+      } catch (error) {
+        console.error("Failed to update user profile:", error);
+        throw error;
+      }
+    },
+    [user]
+  );
+
+  // Refresh user data from server
+  const refreshUserProfile = useCallback(async () => {
+    if (!user?.id || !user?.userType) return;
+
+    try {
+      const freshProfileData = await fetchFullProfileData(user);
+      const updatedUser = { ...user, ...freshProfileData };
+
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      return updatedUser;
+    } catch (error) {
+      console.error("Failed to refresh user profile:", error);
+      throw error;
+    }
+  }, [user, fetchFullProfileData]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -161,6 +232,8 @@ export const AuthProvider = ({ children }) => {
         register,
         loginErrorMessage,
         clearLoginError,
+        updateUserProfile,
+        refreshUserProfile,
       }}
     >
       {children}

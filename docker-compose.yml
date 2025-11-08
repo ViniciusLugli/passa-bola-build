@@ -3,8 +3,8 @@ services:
     image: mariadb:10.11
     container_name: mariadb-db
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: api_passa_bola
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-api_passa_bola}
     ports:
       - "3307:3306"
     volumes:
@@ -13,7 +13,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent || exit 1",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD:-root} --silent || exit 1",
         ]
       interval: 10s
       timeout: 10s
@@ -30,11 +30,16 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: "jdbc:mysql://mariadb:3306/api_passa_bola?createDatabaseIfNotExist=true&serverTimezone=UTC"
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      JWT_SECRET: mySecretKeyForFootballSocialNetworkApplication2024
-      JWT_EXPIRATION: 86400000
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql-passa-bola.mysql.database.azure.com:3306/api_passa_bola?useSSL=true&requireSSL=true}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-root}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:-mySecretKeyForFootballSocialNetworkApplication2024}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      # Azure Blob Storage Configuration
+      AZURE_STORAGE_ACCOUNT_NAME: ${AZURE_STORAGE_ACCOUNT_NAME:-stdev2495531}
+      AZURE_STORAGE_ACCOUNT_KEY: ${AZURE_STORAGE_ACCOUNT_KEY:-4IMFESj2SfFUahsUZMiM2zqunzOGuu5tCppP3qV+76EQvR0pANu1+d+kAltLIvEyel0BNlccU55L+AStk1M55g==}
+      AZURE_STORAGE_BLOB_ENDPOINT: ${AZURE_STORAGE_BLOB_ENDPOINT:-https://stdev2495531.blob.core.windows.net}
+      AZURE_STORAGE_CONNECTION_STRING: ${AZURE_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=https;EndpointSuffix=core.windows.net;AccountName=stdev2495531;AccountKey=4IMFESj2SfFUahsUZMiM2zqunzOGuu5tCppP3qV+76EQvR0pANu1+d+kAltLIvEyel0BNlccU55L+AStk1M55g==;BlobEndpoint=https://stdev2495531.blob.core.windows.net/}
     depends_on:
       mariadb:
         condition: service_healthy
@@ -55,8 +60,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://api-passa-bola:8080
-      NEXT_PUBLIC_CHATBOT_URL: http://chatbot:5000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://ca-passa-bola-api.icyfield-c8812466.westus3.azurecontainerapps.io}
+      NEXT_PUBLIC_CHATBOT_URL: ${NEXT_PUBLIC_CHATBOT_URL:-https://ca-passa-bola-chatbot.icyfield-c8812466.westus3.azurecontainerapps.io}
     depends_on:
       - api-passa-bola
     networks:
@@ -88,8 +93,8 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-admin}
     depends_on:
       - prometheus
     networks:

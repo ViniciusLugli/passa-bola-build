@@ -78,7 +78,15 @@ print_success "Imagem da API enviada"
 print_step "2/3 - Construindo imagem do Frontend..."
 cd "$PROJECT_ROOT/front"
 
-docker build -f Dockerfile.azure -t "${ACR_LOGIN_SERVER}/${FRONT_IMAGE}:latest" .
+# URLs dos serviços (sem /api no final!)
+API_FQDN="ca-passa-bola-api.${ENVIRONMENT_SUFFIX}"
+CHATBOT_FQDN="ca-passa-bola-chatbot.${ENVIRONMENT_SUFFIX}"
+
+docker build -f Dockerfile.azure \
+  --build-arg NEXT_PUBLIC_API_URL="https://${API_FQDN}" \
+  --build-arg NEXT_PUBLIC_CHATBOT_URL="https://${CHATBOT_FQDN}" \
+  --build-arg NEXT_PUBLIC_ENABLE_WEBSOCKET=true \
+  -t "${ACR_LOGIN_SERVER}/${FRONT_IMAGE}:latest" .
 print_success "Imagem do Frontend construída"
 
 print_step "Enviando imagem do Frontend para ACR..."

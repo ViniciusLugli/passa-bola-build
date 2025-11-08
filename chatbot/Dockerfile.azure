@@ -1,5 +1,13 @@
-# Dockerfile otimizado para Azure
+# ============================================================================
+# Dockerfile.azure - Chatbot Flask otimizado para Azure Container Apps
+# ============================================================================
+
 FROM python:3.11-slim
+
+# Metadata
+LABEL maintainer="Passa Bola Team"
+LABEL description="Chatbot Flask com Gemini - Passa Bola"
+LABEL version="1.0"
 
 WORKDIR /app
 
@@ -15,7 +23,8 @@ RUN groupadd -r appgroup && \
 # Copia requirements e instala dependências
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir gunicorn
+    pip install --no-cache-dir gunicorn && \
+    pip cache purge
 
 # Copia código da aplicação
 COPY --chown=appuser:appgroup app.py .
@@ -30,5 +39,9 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=30s \
     CMD curl --fail http://localhost:5000/health || exit 1
 
+# Variáveis de ambiente defaults
+ENV FLASK_ENV=production
+ENV PYTHONUNBUFFERED=1
+
 # Usa Gunicorn para produção (mais robusto que Flask development server)
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "2", "--timeout", "60", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "2", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-", "app:app"]

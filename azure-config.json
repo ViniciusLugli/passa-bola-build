@@ -104,5 +104,46 @@
   "networking": {
     "allowAzureServices": true,
     "corsOrigins": ["*"]
+  },
+  "storage": {
+    "accountName": "stdev2495531",
+    "sku": "Standard_LRS",
+    "kind": "StorageV2",
+    "accessTier": "Hot",
+    "comment": "Storage Account de desenvolvimento usado como produção (MVP). Standard_LRS é o mais barato (~$0.02/GB/mês)",
+    "containers": [
+      {
+        "name": "imagens",
+        "publicAccess": "blob",
+        "comment": "Container público para imagens de perfil, times, etc."
+      },
+      {
+        "name": "documentos",
+        "publicAccess": "off",
+        "comment": "Container privado para documentos sensíveis"
+      },
+      {
+        "name": "avatars",
+        "publicAccess": "blob",
+        "comment": "Container público para avatares de usuários"
+      },
+      {
+        "name": "temp",
+        "publicAccess": "off",
+        "comment": "Container privado para arquivos temporários"
+      },
+      {
+        "name": "videos",
+        "publicAccess": "blob",
+        "comment": "Container público para vídeos"
+      }
+    ],
+    "cors": {
+      "allowedOrigins": ["*"],
+      "allowedMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "allowedHeaders": ["*"],
+      "exposedHeaders": ["*"],
+      "maxAgeInSeconds": 3600
+    }
   }
 }

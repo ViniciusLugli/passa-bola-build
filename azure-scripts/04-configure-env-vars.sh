@@ -90,20 +90,55 @@ if [[ ! $REPLY =~ ^[Ss]$ ]]; then
 fi
 
 # ===================================================================
-# 2. CONFIGURAR API (Spring Boot)
+# 2. VERIFICAR BLOB STORAGE
+# ===================================================================
+
+log_info "Verificando configuração do Blob Storage..."
+
+STORAGE_ENV_FILE="$PROJECT_ROOT/azure-storage.env"
+STORAGE_DEV_ENV_FILE="$PROJECT_ROOT/azure-storage-dev.env"
+
+if [ -f "$STORAGE_ENV_FILE" ]; then
+    log_info "Blob Storage de produção encontrado. Carregando configurações..."
+    source "$STORAGE_ENV_FILE"
+    BLOB_STORAGE_AVAILABLE=true
+elif [ -f "$STORAGE_DEV_ENV_FILE" ]; then
+    log_warning "Usando Blob Storage de desenvolvimento"
+    source "$STORAGE_DEV_ENV_FILE"
+    BLOB_STORAGE_AVAILABLE=true
+else
+    log_warning "Blob Storage não configurado. Execute: ./05-deploy-storage.sh ou ./deploy-storage-dev.sh"
+    BLOB_STORAGE_AVAILABLE=false
+fi
+
+# ===================================================================
+# 3. CONFIGURAR API (Spring Boot)
 # ===================================================================
 
 log_info "Configurando variáveis de ambiente da API..."
 
-# Criar secrets
+# Criar secrets (incluindo Blob Storage se disponível)
 log_info "Criando secrets da API..."
-az containerapp secret set \
-  --name "$API_APP" \
-  --resource-group "$RESOURCE_GROUP" \
-  --secrets \
-    db-password="$DB_PASSWORD" \
-    jwt-secret="$JWT_SECRET" \
-  --output none
+
+if [ "$BLOB_STORAGE_AVAILABLE" = true ]; then
+    log_info "Adicionando credenciais do Blob Storage..."
+    az containerapp secret set \
+      --name "$API_APP" \
+      --resource-group "$RESOURCE_GROUP" \
+      --secrets \
+        db-password="$DB_PASSWORD" \
+        jwt-secret="$JWT_SECRET" \
+        azure-storage-key="$AZURE_STORAGE_KEY" \
+      --output none
+else
+    az containerapp secret set \
+      --name "$API_APP" \
+      --resource-group "$RESOURCE_GROUP" \
+      --secrets \
+        db-password="$DB_PASSWORD" \
+        jwt-secret="$JWT_SECRET" \
+      --output none
+fi
 
 log_success "Secrets da API criados"
 
@@ -125,23 +160,45 @@ else
     log_success "CORS configurado para: $CORS_ORIGINS"
 fi
 
-az containerapp update \
-  --name "$API_APP" \
-  --resource-group "$RESOURCE_GROUP" \
-  --set-env-vars \
-    "SPRING_DATASOURCE_URL=jdbc:mysql://${DB_SERVER}.mysql.database.azure.com:3306/${DB_NAME}?useSSL=true&requireSSL=true&serverTimezone=America/Sao_Paulo" \
-    "SPRING_DATASOURCE_USERNAME=${DB_ADMIN_USER}@${DB_SERVER}" \
-    "SPRING_DATASOURCE_PASSWORD=secretref:db-password" \
-    "JWT_SECRET=secretref:jwt-secret" \
-    "JWT_EXPIRATION=3600000" \
-    "CORS_ALLOWED_ORIGINS=${CORS_ORIGINS}" \
-    "SPRING_PROFILES_ACTIVE=prod" \
-  --output none
+# Construir variáveis de ambiente (com ou sem Blob Storage)
+if [ "$BLOB_STORAGE_AVAILABLE" = true ]; then
+    log_info "Adicionando variáveis do Blob Storage à API..."
+    az containerapp update \
+      --name "$API_APP" \
+      --resource-group "$RESOURCE_GROUP" \
+      --set-env-vars \
+        "SPRING_DATASOURCE_URL=jdbc:mysql://${DB_SERVER}.mysql.database.azure.com:3306/${DB_NAME}?useSSL=true&requireSSL=true&serverTimezone=America/Sao_Paulo" \
+        "SPRING_DATASOURCE_USERNAME=${DB_ADMIN_USER}@${DB_SERVER}" \
+        "SPRING_DATASOURCE_PASSWORD=secretref:db-password" \
+        "JWT_SECRET=secretref:jwt-secret" \
+        "JWT_EXPIRATION=3600000" \
+        "CORS_ALLOWED_ORIGINS=${CORS_ORIGINS}" \
+        "SPRING_PROFILES_ACTIVE=prod" \
+        "AZURE_STORAGE_ACCOUNT_NAME=${AZURE_STORAGE_ACCOUNT}" \
+        "AZURE_STORAGE_ACCOUNT_KEY=secretref:azure-storage-key" \
+        "AZURE_STORAGE_BLOB_ENDPOINT=${AZURE_STORAGE_BLOB_ENDPOINT}" \
+        "AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}" \
+      --output none
+else
+    log_warning "Blob Storage não disponível. Configurando apenas variáveis básicas..."
+    az containerapp update \
+      --name "$API_APP" \
+      --resource-group "$RESOURCE_GROUP" \
+      --set-env-vars \
+        "SPRING_DATASOURCE_URL=jdbc:mysql://${DB_SERVER}.mysql.database.azure.com:3306/${DB_NAME}?useSSL=true&requireSSL=true&serverTimezone=America/Sao_Paulo" \
+        "SPRING_DATASOURCE_USERNAME=${DB_ADMIN_USER}@${DB_SERVER}" \
+        "SPRING_DATASOURCE_PASSWORD=secretref:db-password" \
+        "JWT_SECRET=secretref:jwt-secret" \
+        "JWT_EXPIRATION=3600000" \
+        "CORS_ALLOWED_ORIGINS=${CORS_ORIGINS}" \
+        "SPRING_PROFILES_ACTIVE=prod" \
+      --output none
+fi
 
 log_success "Variáveis de ambiente da API configuradas"
 
 # ===================================================================
-# 3. CONFIGURAR CHATBOT (Flask + Gemini)
+# 4. CONFIGURAR CHATBOT (Flask + Gemini)
 # ===================================================================
 
 log_info "Configurando variáveis de ambiente do Chatbot..."
@@ -173,7 +230,7 @@ az containerapp update \
 log_success "Variáveis de ambiente do Chatbot configuradas"
 
 # ===================================================================
-# 4. CONFIGURAR FRONTEND (Next.js)
+# 5. CONFIGURAR FRONTEND (Next.js)
 # ===================================================================
 
 log_info "Configurando variáveis de ambiente do Frontend..."
@@ -198,13 +255,14 @@ az containerapp update \
   --set-env-vars \
     "NEXT_PUBLIC_API_URL=https://${API_FQDN}" \
     "NEXT_PUBLIC_CHATBOT_URL=https://${CHATBOT_FQDN}" \
+    "NEXT_PUBLIC_ENABLE_WEBSOCKET=true" \
     "NODE_ENV=production" \
   --output none
 
 log_success "Variáveis de ambiente do Frontend configuradas"
 
 # ===================================================================
-# 5. VERIFICAR CONFIGURAÇÕES
+# 6. VERIFICAR CONFIGURAÇÕES
 # ===================================================================
 
 echo ""
@@ -242,7 +300,7 @@ az containerapp show \
 echo ""
 
 # ===================================================================
-# 6. ATUALIZAR CORS DA API (SE NECESSÁRIO)
+# 7. ATUALIZAR CORS DA API (SE NECESSÁRIO)
 # ===================================================================
 
 if [ "$CORS_ORIGINS" = "*" ]; then
@@ -257,12 +315,27 @@ if [ "$CORS_ORIGINS" = "*" ]; then
 fi
 
 # ===================================================================
-# 7. SALVAR INFORMAÇÕES (SEM SECRETS)
+# 8. SALVAR INFORMAÇÕES (SEM SECRETS)
 # ===================================================================
 
 log_info "Salvando informações de configuração..."
 
 ENV_INFO_FILE="$PROJECT_ROOT/azure-env-info.txt"
+
+# Construir seção do Blob Storage
+BLOB_STORAGE_INFO=""
+if [ "$BLOB_STORAGE_AVAILABLE" = true ]; then
+    BLOB_STORAGE_INFO="
+# Azure Blob Storage
+STORAGE_ACCOUNT=$AZURE_STORAGE_ACCOUNT
+STORAGE_BLOB_ENDPOINT=$AZURE_STORAGE_BLOB_ENDPOINT
+STORAGE_IMAGENS_URL=${AZURE_STORAGE_BLOB_ENDPOINT}/imagens
+STORAGE_DOCUMENTOS_URL=${AZURE_STORAGE_BLOB_ENDPOINT}/documentos
+STORAGE_AVATARS_URL=${AZURE_STORAGE_BLOB_ENDPOINT}/avatars
+STORAGE_TEMP_URL=${AZURE_STORAGE_BLOB_ENDPOINT}/temp
+STORAGE_VIDEOS_URL=${AZURE_STORAGE_BLOB_ENDPOINT}/videos
+"
+fi
 
 cat > "$ENV_INFO_FILE" << EOF
 # ===================================================================
@@ -276,7 +349,7 @@ RESOURCE_GROUP=$RESOURCE_GROUP
 DB_SERVER=$DB_SERVER.mysql.database.azure.com
 DB_NAME=$DB_NAME
 DB_USERNAME=$DB_ADMIN_USER@$DB_SERVER
-
+$BLOB_STORAGE_INFO
 # Container Apps URLs
 API_URL=https://$API_FQDN
 FRONTEND_URL=https://$FRONT_FQDN
@@ -291,6 +364,7 @@ JWT_EXPIRATION=3600000 (1 hora)
 # Secrets Configurados:
 # - db-password (API)
 # - jwt-secret (API)
+$([ "$BLOB_STORAGE_AVAILABLE" = true ] && echo "# - azure-storage-key (API)")
 # - google-api-key (Chatbot)
 # - serpapi-key (Chatbot)
 
@@ -303,7 +377,7 @@ EOF
 log_success "Informações salvas em: $ENV_INFO_FILE"
 
 # ===================================================================
-# 8. REINICIAR CONTAINERS (OPCIONAL)
+# 9. REINICIAR CONTAINERS (OPCIONAL)
 # ===================================================================
 
 echo ""

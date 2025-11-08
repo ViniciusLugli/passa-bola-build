@@ -1,0 +1,481 @@
+[0;34m==>[0m [0;32mCarregando informações da infraestrutura...[0m
+[0;34m==>[0m [0;32mVerificando login na Azure...[0m
+[0;34m==>[0m [0;32mFazendo login no Azure Container Registry...[0m
+Login Succeeded
+[0;32m✅ Login no ACR realizado[0m
+[0;34m==>[0m [0;32m1/3 - Construindo imagem da API...[0m
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.azure
+#1 transferring dockerfile: 2.08kB done
+#1 DONE 0.2s
+
+#2 [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-21-alpine
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-alpine
+#3 ...
+
+#2 [internal] load metadata for docker.io/library/maven:3.9-eclipse-temurin-21-alpine
+#2 DONE 16.1s
+
+#3 [internal] load metadata for docker.io/library/eclipse-temurin:21-jre-alpine
+#3 DONE 16.2s
+
+#4 [internal] load .dockerignore
+#4 transferring context:
+#4 transferring context: 2B done
+#4 DONE 0.6s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [stage-1 1/5] FROM docker.io/library/eclipse-temurin:21-jre-alpine@sha256:990397e0495ac088ab6ee3d949a2e97b715a134d8b96c561c5d130b3786a489d
+#6 resolve docker.io/library/eclipse-temurin:21-jre-alpine@sha256:990397e0495ac088ab6ee3d949a2e97b715a134d8b96c561c5d130b3786a489d
+#6 ...
+
+#7 [build 1/6] FROM docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:a359ef915913d833091849c0f0feb97c5be64d7a3114235abd770c9eec49ee14
+#7 resolve docker.io/library/maven:3.9-eclipse-temurin-21-alpine@sha256:a359ef915913d833091849c0f0feb97c5be64d7a3114235abd770c9eec49ee14 1.3s done
+#7 DONE 1.5s
+
+#6 [stage-1 1/5] FROM docker.io/library/eclipse-temurin:21-jre-alpine@sha256:990397e0495ac088ab6ee3d949a2e97b715a134d8b96c561c5d130b3786a489d
+#6 resolve docker.io/library/eclipse-temurin:21-jre-alpine@sha256:990397e0495ac088ab6ee3d949a2e97b715a134d8b96c561c5d130b3786a489d 0.8s done
+#6 DONE 1.6s
+
+#5 [internal] load build context
+#5 transferring context: 19.18kB 0.0s done
+#5 DONE 0.2s
+
+#8 [stage-1 2/5] WORKDIR /app
+#8 CACHED
+
+#9 [build 2/6] WORKDIR /build
+#9 CACHED
+
+#10 [stage-1 4/5] RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+#10 CACHED
+
+#11 [stage-1 3/5] RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main curl ||     apk add --no-cache --repository=http://dl-4.alpinelinux.org/alpine/edge/main curl ||     apk add --no-cache curl
+#11 CACHED
+
+#12 [build 4/6] RUN mvn dependency:go-offline -B
+#12 CACHED
+
+#13 [build 3/6] COPY pom.xml .
+#13 CACHED
+
+#14 [build 5/6] COPY src ./src
+#14 CACHED
+
+#15 [build 6/6] RUN mvn clean package -DskipTests -B
+#15 CACHED
+
+#16 [stage-1 5/5] COPY --from=build --chown=appuser:appgroup /build/target/*.jar app.jar
+#16 CACHED
+
+#17 exporting to image
+#17 exporting layers 0.0s done
+#17 exporting manifest sha256:e765187cd0287577873814a513d1e25757847c51b8be0b7845b367b55147e3c5 0.0s done
+#17 exporting config sha256:392f883f93d185204bc2bec1e4ddddfe076baf3f94916b5de99acbc01b9e4590 0.0s done
+#17 exporting attestation manifest sha256:bca6b8da641e8ce1f6120aee63b5308d9aa61d55fd00ccdba9fa956d3a24e3ff
+#17 exporting attestation manifest sha256:bca6b8da641e8ce1f6120aee63b5308d9aa61d55fd00ccdba9fa956d3a24e3ff 5.7s done
+#17 exporting manifest list sha256:c8480cdcbf4ecd9e47620df2ff6d5f23971c00272f501c253957d07631da52c6
+#17 exporting manifest list sha256:c8480cdcbf4ecd9e47620df2ff6d5f23971c00272f501c253957d07631da52c6 1.5s done
+#17 naming to crpassabola.azurecr.io/api-passa-bola:latest
+#17 naming to crpassabola.azurecr.io/api-passa-bola:latest 0.0s done
+#17 unpacking to crpassabola.azurecr.io/api-passa-bola:latest
+#17 unpacking to crpassabola.azurecr.io/api-passa-bola:latest 1.2s done
+#17 DONE 8.8s
+
+ [33m1 warning found (use docker --debug to expand):
+[0m - JSONArgsRecommended: JSON arguments recommended for ENTRYPOINT to prevent unintended behavior related to OS signals (line 62)
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/7pps346ezqxwubklmhcy1wq0r
+[0;32m✅ Imagem da API construída[0m
+[0;34m==>[0m [0;32mEnviando imagem da API para ACR...[0m
+The push refers to repository [crpassabola.azurecr.io/api-passa-bola]
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Waiting
+9858bd7bad2c: Waiting
+2d35ebdb57d9: Waiting
+34074eb54496: Waiting
+27834f25223e: Waiting
+7ba1b1a19826: Layer already exists
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+9858bd7bad2c: Layer already exists
+2d35ebdb57d9: Waiting
+34074eb54496: Layer already exists
+27834f25223e: Waiting
+2d35ebdb57d9: Waiting
+27834f25223e: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Waiting
+1efb71aa46e6: Waiting
+c12c21783ef0: Waiting
+e0d459441fab: Waiting
+07d21658e7c6: Waiting
+3f7cb99dfc90: Layer already exists
+1efb71aa46e6: Layer already exists
+c12c21783ef0: Waiting
+e0d459441fab: Layer already exists
+2d35ebdb57d9: Layer already exists
+27834f25223e: Layer already exists
+07d21658e7c6: Waiting
+c12c21783ef0: Layer already exists
+07d21658e7c6: Waiting
+07d21658e7c6: Pushed
+latest: digest: sha256:c8480cdcbf4ecd9e47620df2ff6d5f23971c00272f501c253957d07631da52c6 size: 856
+[0;32m✅ Imagem da API enviada[0m
+[0;34m==>[0m [0;32m2/3 - Construindo imagem do Frontend...[0m
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.azure
+#1 transferring dockerfile:
+#1 transferring dockerfile: 3.37kB done
+#1 DONE 1.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-alpine
+#2 DONE 8.2s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 474B done
+#3 DONE 1.3s
+
+#4 [internal] load build context
+#4 DONE 0.0s
+
+#5 [deps 1/5] FROM docker.io/library/node:20-alpine@sha256:6178e78b972f79c335df281f4b7674a2d85071aae2af020ffa39f0a770265435
+#5 resolve docker.io/library/node:20-alpine@sha256:6178e78b972f79c335df281f4b7674a2d85071aae2af020ffa39f0a770265435
+#5 resolve docker.io/library/node:20-alpine@sha256:6178e78b972f79c335df281f4b7674a2d85071aae2af020ffa39f0a770265435 0.2s done
+#5 DONE 1.4s
+
+#6 [deps 2/5] WORKDIR /app
+#6 CACHED
+
+#7 [runner 3/7] RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main curl ||     apk add --no-cache --repository=http://dl-4.alpinelinux.org/alpine/edge/main curl ||     apk add --no-cache curl
+#7 CACHED
+
+#8 [runner 4/7] RUN addgroup -S appgroup && adduser -S nextjs -G appgroup
+#8 CACHED
+
+#4 [internal] load build context
+#4 transferring context: 14.35kB 0.0s done
+#4 DONE 3.6s
+
+#9 [deps 3/5] RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main libc6-compat ||     apk add --no-cache --repository=http://dl-4.alpinelinux.org/alpine/edge/main libc6-compat ||     apk add --no-cache libc6-compat
+#9 CACHED
+
+#10 [deps 4/5] COPY package.json package-lock.json ./
+#10 CACHED
+
+#11 [deps 5/5] RUN npm ci --ignore-scripts
+#11 27.37 
+#11 27.37 added 417 packages, and audited 418 packages in 24s
+#11 27.37 
+#11 27.37 163 packages are looking for funding
+#11 27.37   run `npm fund` for details
+#11 27.37 
+#11 27.37 found 0 vulnerabilities
+#11 27.37 npm notice
+#11 27.37 npm notice New major version of npm available! 10.8.2 -> 11.6.2
+#11 27.37 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+#11 27.37 npm notice To update run: npm install -g npm@11.6.2
+#11 27.37 npm notice
+#11 DONE 37.0s
+
+#6 [deps 2/5] WORKDIR /app
+#6 CACHED
+
+#12 [builder 3/5] COPY --from=deps /app/node_modules ./node_modules
+#12 DONE 20.3s
+
+#13 [builder 4/5] COPY . .
+#13 DONE 8.5s
+
+#14 [builder 5/5] RUN npm run build
+#14 3.579 
+#14 3.579 > passa_bola@0.1.0 build
+#14 3.579 > next build
+#14 3.579 
+#14 4.810    ▲ Next.js 15.5.2
+#14 4.811 
+#14 4.912    Creating an optimized production build ...
+#14 29.18 Failed to compile.
+#14 29.18 
+#14 29.18 ./app/globals.css.webpack[javascript/auto]!=!./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[3]!./app/globals.css
+#14 29.18 Error: Cannot find module '@tailwindcss/postcss'
+#14 29.18 Require stack:
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/blocks/css/index.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/index.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack-config.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack-build/impl.js
+#14 29.18 - /app/node_modules/next/dist/compiled/jest-worker/processChild.js
+#14 29.18     at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+#14 29.18     at /app/node_modules/next/dist/server/require-hook.js:57:36
+#14 29.18     at Function.resolve (node:internal/modules/helpers:193:19)
+#14 29.18     at loadPlugin (/app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:53:32)
+#14 29.18     at /app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:185:56
+#14 29.18     at Array.map (<anonymous>)
+#14 29.18     at getPostCssPlugins (/app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:185:47)
+#14 29.18     at async /app/node_modules/next/dist/build/webpack/config/blocks/css/index.js:125:36
+#14 29.18     at async /app/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js:52:40
+#14 29.18     at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:157:20)
+#14 29.18 
+#14 29.18 Import trace for requested module:
+#14 29.18 ./app/globals.css.webpack[javascript/auto]!=!./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[3]!./app/globals.css
+#14 29.18 ./app/globals.css
+#14 29.18 
+#14 29.18 ./app/globals.css
+#14 29.18 Error: Cannot find module '@tailwindcss/postcss'
+#14 29.18 Require stack:
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/blocks/css/index.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/index.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack-config.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack-build/impl.js
+#14 29.18 - /app/node_modules/next/dist/compiled/jest-worker/processChild.js
+#14 29.18     at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+#14 29.18     at /app/node_modules/next/dist/server/require-hook.js:57:36
+#14 29.18     at Function.resolve (node:internal/modules/helpers:193:19)
+#14 29.18     at loadPlugin (/app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:53:32)
+#14 29.18     at /app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:185:56
+#14 29.18     at Array.map (<anonymous>)
+#14 29.18     at getPostCssPlugins (/app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:185:47)
+#14 29.18     at async /app/node_modules/next/dist/build/webpack/config/blocks/css/index.js:125:36
+#14 29.18     at async /app/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js:52:40
+#14 29.18     at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:157:20)
+#14 29.18     at tryRunOrWebpackError (/app/node_modules/next/dist/compiled/webpack/bundle5.js:29:316119)
+#14 29.18     at __webpack_require_module__ (/app/node_modules/next/dist/compiled/webpack/bundle5.js:29:131532)
+#14 29.18     at __nested_webpack_require_161494__ (/app/node_modules/next/dist/compiled/webpack/bundle5.js:29:130967)
+#14 29.18     at /app/node_modules/next/dist/compiled/webpack/bundle5.js:29:131824
+#14 29.18     at symbolIterator (/app/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+#14 29.18     at done (/app/node_modules/next/dist/compiled/neo-async/async.js:1:14824)
+#14 29.18     at Hook.eval [as callAsync] (eval at create (/app/node_modules/next/dist/compiled/webpack/bundle5.js:14:9224), <anonymous>:15:1)
+#14 29.18     at Hook.CALL_ASYNC_DELEGATE [as _callAsync] (/app/node_modules/next/dist/compiled/webpack/bundle5.js:14:6378)
+#14 29.18     at /app/node_modules/next/dist/compiled/webpack/bundle5.js:29:130687
+#14 29.18     at symbolIterator (/app/node_modules/next/dist/compiled/neo-async/async.js:1:14402)
+#14 29.18 -- inner error --
+#14 29.18 Error: Cannot find module '@tailwindcss/postcss'
+#14 29.18 Require stack:
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/blocks/css/index.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack/config/index.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack-config.js
+#14 29.18 - /app/node_modules/next/dist/build/webpack-build/impl.js
+#14 29.18 - /app/node_modules/next/dist/compiled/jest-worker/processChild.js
+#14 29.18     at Module._resolveFilename (node:internal/modules/cjs/loader:1207:15)
+#14 29.18     at /app/node_modules/next/dist/server/require-hook.js:57:36
+#14 29.18     at Function.resolve (node:internal/modules/helpers:193:19)
+#14 29.18     at loadPlugin (/app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:53:32)
+#14 29.18     at /app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:185:56
+#14 29.18     at Array.map (<anonymous>)
+#14 29.18     at getPostCssPlugins (/app/node_modules/next/dist/build/webpack/config/blocks/css/plugins.js:185:47)
+#14 29.18     at async /app/node_modules/next/dist/build/webpack/config/blocks/css/index.js:125:36
+#14 29.18     at async /app/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js:52:40
+#14 29.18     at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:157:20)
+#14 29.18     at Object.<anonymous> (/app/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[2]!/app/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[3]!/app/app/globals.css:1:7)
+#14 29.18     at /app/node_modules/next/dist/compiled/webpack/bundle5.js:29:962717
+#14 29.18     at Hook.eval [as call] (eval at create (/app/node_modules/next/dist/compiled/webpack/bundle5.js:14:9002), <anonymous>:7:1)
+#14 29.18     at Hook.CALL_DELEGATE [as _call] (/app/node_modules/next/dist/compiled/webpack/bundle5.js:14:6272)
+#14 29.18     at /app/node_modules/next/dist/compiled/webpack/bundle5.js:29:131565
+#14 29.18     at tryRunOrWebpackError (/app/node_modules/next/dist/compiled/webpack/bundle5.js:29:316073)
+#14 29.18     at __webpack_require_module__ (/app/node_modules/next/dist/compiled/webpack/bundle5.js:29:131532)
+#14 29.18     at __nested_webpack_require_161494__ (/app/node_modules/next/dist/compiled/webpack/bundle5.js:29:130967)
+#14 29.18     at /app/node_modules/next/dist/compiled/webpack/bundle5.js:29:131824
+#14 29.18     at symbolIterator (/app/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+#14 29.18 
+#14 29.18 Generated code for /app/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[2]!/app/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[3]!/app/app/globals.css
+#14 29.18 
+#14 29.18 Import trace for requested module:
+#14 29.18 ./app/globals.css
+#14 29.18 
+#14 29.20 
+#14 29.20 > Build failed because of webpack errors
+#14 29.22 npm notice
+#14 29.22 npm notice New major version of npm available! 10.8.2 -> 11.6.2
+#14 29.22 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+#14 29.22 npm notice To update run: npm install -g npm@11.6.2
+#14 29.22 npm notice
+#14 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+------
+ > [builder 5/5] RUN npm run build:
+29.18 Import trace for requested module:
+29.18 ./app/globals.css
+29.18 
+29.20 
+29.20 > Build failed because of webpack errors
+29.22 npm notice
+29.22 npm notice New major version of npm available! 10.8.2 -> 11.6.2
+29.22 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+29.22 npm notice To update run: npm install -g npm@11.6.2
+29.22 npm notice
+------
+Dockerfile.azure:51
+--------------------
+  49 |         
+  50 |         # Build da aplicação em modo standalone (sem Turbopack para estabilidade em Docker)
+  51 | >>>     RUN npm run build
+  52 |         
+  53 |         # ============================================================================
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/whwq1ph9ppg3nllbbso8ijgik

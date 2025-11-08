@@ -10,6 +10,11 @@ const createGameParticipantsRoutes = (fetchApi) => ({
     fetchApi(`/game-participants/player/${playerId}?page=${page}&size=${size}`),
   getByTeam: (teamId, { page = 0, size = 10 } = {}) =>
     fetchApi(`/game-participants/team/${teamId}?page=${page}&size=${size}`),
+  updateGoals: (participantId, goals) =>
+    fetchApi(`/game-participants/${participantId}/goals`, {
+      method: "PATCH",
+      body: { goals },
+    }),
 });
 
 export default createGameParticipantsRoutes;

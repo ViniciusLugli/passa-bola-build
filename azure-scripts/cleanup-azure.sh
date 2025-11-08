@@ -66,6 +66,24 @@ echo -e "  ${RED}❌ Azure Container Registry${NC}"
 echo -e "  ${RED}❌ Azure Database for MySQL (incluindo dados!)${NC}"
 echo -e "  ${RED}❌ Application Insights${NC}"
 echo -e "  ${RED}❌ Log Analytics Workspace${NC}"
+
+# Listar Storage Accounts existentes no Resource Group (se houver)
+echo ""
+print_step "Verificando Storage Accounts no Resource Group..."
+mapfile -t STORAGE_ACCOUNTS <<< $(az storage account list --resource-group "$RESOURCE_GROUP" --query '[].name' -o tsv 2>/dev/null || true)
+if [ ${#STORAGE_ACCOUNTS[@]} -gt 0 ] && [ -n "${STORAGE_ACCOUNTS[0]}" ]; then
+    echo -e "  ${RED}❌ Storage Accounts (Blob Storage):${NC}"
+    for sa in "${STORAGE_ACCOUNTS[@]}"; do
+        if [ -n "$sa" ]; then
+            # Conta número de containers e blobs
+            CONTAINER_COUNT=$(az storage container list --account-name "$sa" --query 'length(@)' -o tsv 2>/dev/null || echo "0")
+            echo -e "     - $sa ($CONTAINER_COUNT containers, incluindo todos os blobs)"
+        fi
+    done
+else
+    echo -e "  ${YELLOW}ℹ️  Nenhuma Storage Account encontrada${NC}"
+fi
+
 echo ""
 echo -e "${RED}Esta ação é IRREVERSÍVEL!${NC}"
 echo ""
@@ -92,17 +110,67 @@ echo ""
 print_warning "Iniciando remoção de recursos em 5 segundos... (Ctrl+C para cancelar)"
 sleep 5
 
+# Se o script foi chamado com --storage-only, removemos apenas Storage Accounts no resource group
+if [[ "$1" == "--storage-only" || "$1" == "--only-storage" ]]; then
+    print_step "Removendo Storage Accounts no Resource Group: $RESOURCE_GROUP"
+    # listar storage accounts
+    mapfile -t ST_ACC <<< $(az storage account list --resource-group "$RESOURCE_GROUP" --query '[].name' -o tsv 2>/dev/null || true)
+    if [ ${#ST_ACC[@]} -eq 0 ]; then
+        print_warning "Nenhuma Storage Account encontrada em $RESOURCE_GROUP"
+        exit 0
+    fi
+    echo "Encontradas as seguintes Storage Accounts:"
+    for sa in "${ST_ACC[@]}"; do
+        echo "  - $sa"
+    done
+
+    read -p "Deseja continuar e deletar essas Storage Accounts? Digite 'SIM' para confirmar: " CONFSA
+    if [ "$CONFSA" != "SIM" ]; then
+        print_warning "Operação cancelada pelo usuário. Nenhum recurso foi removido."
+        exit 0
+    fi
+
+    for sa in "${ST_ACC[@]}"; do
+        print_step "Deletando Storage Account: $sa"
+        # Deleta a storage account (isso remove todos os blobs/containers)
+        az storage account delete --name "$sa" --resource-group "$RESOURCE_GROUP" --yes --output none || print_error "Falha ao deletar Storage Account $sa"
+        print_success "Storage Account $sa: solicitação de remoção enviada"
+    done
+
+    print_success "Remoção de Storage Accounts iniciada. Pode levar alguns minutos para concluir."
+    exit 0
+fi
+
 # Remove o Resource Group (isso remove todos os recursos dentro dele)
 print_step "Removendo Resource Group: $RESOURCE_GROUP"
 echo ""
 print_warning "Isso pode levar alguns minutos..."
+echo ""
+echo "Escolha o modo de remoção:"
+echo "  1) Aguardar a remoção completar (recomendado)"
+echo "  2) Remover em background e sair imediatamente"
+read -p "Digite sua opção [1]: " WAIT_OPTION
+WAIT_OPTION=${WAIT_OPTION:-1}
 
-az group delete \
-    --name "$RESOURCE_GROUP" \
-    --yes \
-    --no-wait
-
-print_success "Comando de remoção executado. O processo está rodando em background."
+if [ "$WAIT_OPTION" == "1" ]; then
+    # Remove e aguarda
+    echo ""
+    print_step "Removendo Resource Group e aguardando conclusão..."
+    if az group delete \
+        --name "$RESOURCE_GROUP" \
+        --yes 2>&1 | grep -q "ResourceGroupNotFound"; then
+        print_warning "Resource Group '$RESOURCE_GROUP' já foi removido ou não existe."
+    else
+        print_success "Resource Group removido com sucesso!"
+    fi
+else
+    # Remove sem aguardar
+    az group delete \
+        --name "$RESOURCE_GROUP" \
+        --yes \
+        --no-wait
+    print_success "Comando de remoção executado. O processo está rodando em background."
+fi
 
 echo ""
 echo -e "${BLUE}Para acompanhar o progresso, use:${NC}"
@@ -127,6 +195,16 @@ fi
 if [ -f "$PROJECT_ROOT/.env.azure" ]; then
     print_warning "Arquivo .env.azure mantido (contém suas credenciais)"
     echo "    Se desejar removê-lo: rm $PROJECT_ROOT/.env.azure"
+fi
+
+if [ -f "$PROJECT_ROOT/azure-storage.env" ]; then
+    rm "$PROJECT_ROOT/azure-storage.env"
+    print_success "Arquivo azure-storage.env removido"
+fi
+
+if [ -f "$PROJECT_ROOT/azure-storage-dev.env" ]; then
+    rm "$PROJECT_ROOT/azure-storage-dev.env"
+    print_success "Arquivo azure-storage-dev.env removido"
 fi
 
 echo ""

@@ -1,5 +1,6 @@
 .sixthrules
 .github
+.claude
 ap.example
 pom.example
 
@@ -10,5 +11,5 @@ azure-urls.txt
 azure-env-info.txt
 
 # Environment files (contain API keys and secrets)
-.env
+*.env
 chatbot/.env

@@ -189,7 +189,8 @@ if az containerapp show --name "$FRONT_NAME" --resource-group "$AZURE_RESOURCE_G
         --image "${ACR_LOGIN_SERVER}/${FRONT_IMAGE}:latest" \
         --set-env-vars \
             NEXT_PUBLIC_API_URL="$API_URL" \
-            NEXT_PUBLIC_CHATBOT_URL="$CHATBOT_URL"
+            NEXT_PUBLIC_CHATBOT_URL="$CHATBOT_URL" \
+            NEXT_PUBLIC_ENABLE_WEBSOCKET=true
     
     print_success "Frontend atualizado"
 else
@@ -209,7 +210,8 @@ else
         --max-replicas "$FRONT_MAX_REPLICAS" \
         --env-vars \
             NEXT_PUBLIC_API_URL="$API_URL" \
-            NEXT_PUBLIC_CHATBOT_URL="$CHATBOT_URL"
+            NEXT_PUBLIC_CHATBOT_URL="$CHATBOT_URL" \
+            NEXT_PUBLIC_ENABLE_WEBSOCKET=true
     
     print_success "Frontend criado e deployado"
 fi

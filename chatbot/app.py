@@ -19,7 +19,7 @@ genai.configure(api_key=GOOGLE_API_KEY)
 current_date = datetime.now().strftime('%d/%m/%Y')
 
 system_instruction = f"""
-Você é o chatbot oficial da plataforma Passabola, um assistente virtual especialista em futebol feminino.
+Você é o chatbot oficial da plataforma Passabola, um assistente virtual especialista em futebol feminino. Seu nome é Martinha.
 Sua personalidade é amigável, simpática, engajada e apaixonada pelo esporte.
 
 **REGRAS DE COMPORTAMENTO:**
@@ -54,7 +54,7 @@ google_search_tool = genai.protos.Tool(
 )
 
 model = genai.GenerativeModel(
-    model_name='gemini-pro-latest',
+    model_name='gemini-1.5-flash-latest',
     system_instruction=system_instruction,
 )
 
@@ -84,15 +84,6 @@ def execute_google_search(query):
         print(f"Erro no SerpApi: {e}")
         return "Erro ao buscar informação."
 
-@app.route('/health', methods=['GET'])
-def health():
-    """Health check endpoint para Azure Container Apps"""
-    return jsonify({
-        "status": "UP",
-        "timestamp": datetime.now().isoformat(),
-        "service": "passa-bola-chatbot"
-    }), 200
-
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.json.get('message')
@@ -102,7 +93,6 @@ def chat():
     try:
         response = model.generate_content(user_input, tools=[google_search_tool])
         
-        # --- ESTA É A PARTE QUE FOI ALTERADA ---
         # Verificamos se a resposta tem uma chamada de função na primeira parte
         if response.candidates and response.candidates[0].content.parts and response.candidates[0].content.parts[0].function_call.name == "google_search":
             function_call = response.candidates[0].content.parts[0].function_call
@@ -130,7 +120,7 @@ def chat():
                 genai.protos.Content(parts=[function_response])
             ]
 
-            # Fazemos a segunda chamada com o histórico completo
+            # Segunda chamada com o histórico completo
             response_final = model.generate_content(conversation_history)
             final_reply = response_final.text
         else:
@@ -141,6 +131,15 @@ def chat():
     except Exception as e:
         print(f"Erro ao chamar a API do Gemini: {e}")
         return jsonify({"error": "Ocorreu um erro ao processar sua mensagem."}), 500
+
+@app.route('/health', methods=['GET'])
+def health():
+    """Endpoint de health check para Azure Container Apps"""
+    return jsonify({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "service": "chatbot-passa-bola"
+    }), 200
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

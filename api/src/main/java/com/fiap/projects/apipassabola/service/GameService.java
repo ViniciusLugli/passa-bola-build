@@ -8,7 +8,7 @@ import com.fiap.projects.apipassabola.entity.*;
 import com.fiap.projects.apipassabola.exception.BusinessException;
 import com.fiap.projects.apipassabola.exception.ResourceNotFoundException;
 import com.fiap.projects.apipassabola.repository.*;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class GameService {
     
     private final GameRepository gameRepository;
@@ -31,6 +31,35 @@ public class GameService {
     private final GameParticipantService gameParticipantService;
     private final UserContextService userContextService;
     private final GameSpectatorRepository gameSpectatorRepository;
+    private final RankingPointsService rankingPointsService;
+    private final GoalRepository goalRepository;
+    
+    private final TournamentService tournamentService; // Lazy injection para evitar dependência circular
+    
+    // Construtor customizado para injeção lazy
+    public GameService(GameRepository gameRepository,
+                      OrganizationRepository organizationRepository,
+                      PlayerRepository playerRepository,
+                      TeamRepository teamRepository,
+                      OrganizationService organizationService,
+                      GameParticipantService gameParticipantService,
+                      UserContextService userContextService,
+                      GameSpectatorRepository gameSpectatorRepository,
+                      RankingPointsService rankingPointsService,
+                      GoalRepository goalRepository,
+                      @org.springframework.context.annotation.Lazy TournamentService tournamentService) {
+        this.gameRepository = gameRepository;
+        this.organizationRepository = organizationRepository;
+        this.playerRepository = playerRepository;
+        this.teamRepository = teamRepository;
+        this.organizationService = organizationService;
+        this.gameParticipantService = gameParticipantService;
+        this.userContextService = userContextService;
+        this.gameSpectatorRepository = gameSpectatorRepository;
+        this.rankingPointsService = rankingPointsService;
+        this.goalRepository = goalRepository;
+        this.tournamentService = tournamentService;
+    }
     
     public Page<GameResponse> findAll(Pageable pageable) {
         return gameRepository.findAll(pageable).map(this::convertToResponse);
@@ -233,6 +262,36 @@ public class GameService {
         return convertToResponse(savedGame);
     }
     
+    /**
+     * Cria um jogo de torneio automaticamente
+     * Usado pelo sistema de torneios para criar jogos das partidas do bracket
+     */
+    public Game createTournamentGame(Team team1, Team team2, String venue, LocalDateTime gameDate, 
+                                     String tournamentName, String round, Long creatorId) {
+        // Para jogos de torneio, usamos o tipo CHAMPIONSHIP
+        // Isso permite que o sistema de ranking e pontos funcione corretamente
+        Game game = new Game();
+        game.setGameType(GameType.CHAMPIONSHIP);
+        game.setGameName(tournamentName + " - " + round);
+        game.setGameDate(gameDate);
+        game.setVenue(venue);
+        game.setChampionship(tournamentName);
+        game.setRound(round);
+        game.setDescription("Partida do torneio " + tournamentName);
+        game.setStatus(Game.GameStatus.SCHEDULED);
+        game.setHomeGoals(0);
+        game.setAwayGoals(0);
+        game.setHostId(creatorId);
+        
+        // Configurações padrão para jogos de torneio
+        game.setHasSpectators(true);
+        game.setMaxSpectators(100);
+        game.setMinPlayers(10); // 5x5
+        game.setMaxPlayers(22); // 11x11
+        
+        return gameRepository.save(game);
+    }
+    
     public GameResponse updateFriendlyGame(Long id, FriendlyGameUpdateRequest request) {
         Game game = gameRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Game", "id", id));
@@ -248,6 +307,9 @@ public class GameService {
             throw new BusinessException("Only the game host can update this friendly game");
         }
         
+        // Store previous status to check if game just finished
+        Game.GameStatus previousStatus = game.getStatus();
+        
         // Update friendly game fields
         game.setGameName(request.getGameName());
         game.setGameDate(request.getGameDate());
@@ -259,6 +321,9 @@ public class GameService {
         game.setNotes(request.getNotes());
         
         Game savedGame = gameRepository.save(game);
+        
+        // Friendly games don't count for ranking, so no points distribution
+        
         return convertToResponse(savedGame);
     }
     
@@ -277,6 +342,9 @@ public class GameService {
             throw new BusinessException("Only the game host can update this championship game");
         }
         
+        // Store previous status to check if game just finished
+        Game.GameStatus previousStatus = game.getStatus();
+        
         // Update championship game fields
         game.setGameName(request.getGameName());
         game.setGameDate(request.getGameDate());
@@ -288,6 +356,12 @@ public class GameService {
         game.setNotes(request.getNotes());
         
         Game savedGame = gameRepository.save(game);
+        
+        // Distribute ranking points if game just finished (CHAMPIONSHIP counts for ranking)
+        if (previousStatus != Game.GameStatus.FINISHED && savedGame.getStatus() == Game.GameStatus.FINISHED) {
+            rankingPointsService.distributePointsAfterGame(savedGame);
+        }
+        
         return convertToResponse(savedGame);
     }
     
@@ -324,6 +398,9 @@ public class GameService {
             game.setAwayTeam(awayTeam);
         }
         
+        // Store previous status to check if game just finished
+        Game.GameStatus previousStatus = game.getStatus();
+        
         // Update cup game fields
         game.setGameDate(request.getGameDate());
         game.setVenue(request.getVenue());
@@ -335,6 +412,12 @@ public class GameService {
         game.setNotes(request.getNotes());
         
         Game savedGame = gameRepository.save(game);
+        
+        // Distribute ranking points if game just finished (CUP counts for ranking)
+        if (previousStatus != Game.GameStatus.FINISHED && savedGame.getStatus() == Game.GameStatus.FINISHED) {
+            rankingPointsService.distributePointsAfterGame(savedGame);
+        }
+        
         return convertToResponse(savedGame);
     }
     
@@ -390,6 +473,9 @@ public class GameService {
             throw new BusinessException("Away goals cannot be negative");
         }
         
+        // Store previous status to check if game just finished
+        Game.GameStatus previousStatus = game.getStatus();
+        
         game.setHomeGoals(homeGoals);
         game.setAwayGoals(awayGoals);
         
@@ -400,6 +486,12 @@ public class GameService {
         }
         
         Game savedGame = gameRepository.save(game);
+        
+        // Distribute ranking points if game just finished
+        if (previousStatus != Game.GameStatus.FINISHED && savedGame.getStatus() == Game.GameStatus.FINISHED) {
+            rankingPointsService.distributePointsAfterGame(savedGame);
+        }
+        
         return convertToResponse(savedGame);
     }
     
@@ -418,6 +510,89 @@ public class GameService {
     public Page<GameResponse> searchFriendlyAndChampionshipGames(String gameName, Pageable pageable) {
         return gameRepository.findFriendlyAndChampionshipByGameNameContaining(gameName, pageable)
                 .map(this::convertToResponse);
+    }
+    
+    /**
+     * Finaliza um jogo com placar e gols das jogadoras
+     * Apenas o criador do jogo pode finalizá-lo
+     */
+    public GameResponse finishGame(Long gameId, FinishGameRequest request) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException("Game", "id", gameId));
+        
+        // Verifica se o jogo já está finalizado
+        if (game.getStatus() == Game.GameStatus.FINISHED) {
+            throw new BusinessException("Game is already finished");
+        }
+        
+        // Valida permissão: apenas o criador pode finalizar
+        UserContextService.UserIdAndType currentUser = userContextService.getCurrentUserIdAndType();
+        if (!game.getHostId().equals(currentUser.getUserId())) {
+            throw new BusinessException("Only the game creator can finish this game");
+        }
+        
+        // Valida que o número de gols bate com a lista de gols
+        if (request.getGoals() != null && !request.getGoals().isEmpty()) {
+            long team1Goals = request.getGoals().stream()
+                    .filter(g -> g.getTeamSide() == 1 && !g.getIsOwnGoal())
+                    .count();
+            long team2Goals = request.getGoals().stream()
+                    .filter(g -> g.getTeamSide() == 2 && !g.getIsOwnGoal())
+                    .count();
+            
+            // Para jogos amistosos/campeonatos: homeGoals = time 1, awayGoals = time 2
+            if (game.isFriendlyOrChampionship()) {
+                if (team1Goals != request.getHomeGoals() || team2Goals != request.getAwayGoals()) {
+                    throw new BusinessException(
+                        String.format("Goal count mismatch. Expected: Team1=%d, Team2=%d. Got: Team1=%d, Team2=%d",
+                            request.getHomeGoals(), request.getAwayGoals(), team1Goals, team2Goals)
+                    );
+                }
+            }
+        }
+        
+        // Atualiza o placar
+        game.setHomeGoals(request.getHomeGoals());
+        game.setAwayGoals(request.getAwayGoals());
+        game.setStatus(Game.GameStatus.FINISHED);
+        if (request.getNotes() != null) {
+            game.setNotes(request.getNotes());
+        }
+        
+        Game savedGame = gameRepository.save(game);
+        
+        // Registra os gols das jogadoras
+        if (request.getGoals() != null && !request.getGoals().isEmpty()) {
+            for (GoalRequest goalRequest : request.getGoals()) {
+                Player player = playerRepository.findById(goalRequest.getPlayerId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Player", "id", goalRequest.getPlayerId()));
+                
+                Goal goal = new Goal();
+                goal.setGame(savedGame);
+                goal.setPlayer(player);
+                goal.setTeamSide(goalRequest.getTeamSide());
+                goal.setMinute(goalRequest.getMinute());
+                goal.setIsOwnGoal(goalRequest.getIsOwnGoal() != null ? goalRequest.getIsOwnGoal() : false);
+                
+                goalRepository.save(goal);
+            }
+        }
+        
+        // Distribui pontos de ranking (apenas para CHAMPIONSHIP e CUP)
+        rankingPointsService.distributePointsAfterGame(savedGame);
+        
+        // Sincroniza resultado com torneio (se o jogo faz parte de um torneio)
+        if (tournamentService != null) {
+            try {
+                tournamentService.syncGameResultToMatch(savedGame.getId(), 
+                    savedGame.getHomeGoals(), savedGame.getAwayGoals());
+            } catch (Exception e) {
+                // Não falha se não houver torneio associado
+                log.debug("Jogo {} não está associado a nenhum torneio", savedGame.getId());
+            }
+        }
+        
+        return convertToResponse(savedGame);
     }
     
     private GameResponse convertToResponse(Game game) {

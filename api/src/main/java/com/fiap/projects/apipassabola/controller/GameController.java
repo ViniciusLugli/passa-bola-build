@@ -7,10 +7,12 @@ import com.fiap.projects.apipassabola.dto.request.CupGameRequest;
 import com.fiap.projects.apipassabola.dto.request.FriendlyGameUpdateRequest;
 import com.fiap.projects.apipassabola.dto.request.ChampionshipGameUpdateRequest;
 import com.fiap.projects.apipassabola.dto.request.CupGameUpdateRequest;
+import com.fiap.projects.apipassabola.dto.request.FinishGameRequest;
 import com.fiap.projects.apipassabola.dto.response.GameResponse;
 import com.fiap.projects.apipassabola.entity.Game;
 import com.fiap.projects.apipassabola.entity.GameType;
 import com.fiap.projects.apipassabola.service.GameService;
+import com.fiap.projects.apipassabola.service.GameVideoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,6 +24,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/games")
@@ -30,6 +35,7 @@ import java.time.LocalDateTime;
 public class GameController {
     
     private final GameService gameService;
+    private final GameVideoService gameVideoService;
     
     @GetMapping
     public ResponseEntity<Page<GameResponse>> getAllGames(
@@ -170,5 +176,53 @@ public class GameController {
             @RequestParam Integer awayGoals) {
         GameResponse updatedGame = gameService.updateScore(id, homeGoals, awayGoals);
         return ResponseEntity.ok(updatedGame);
+    }
+    
+    /**
+     * Finaliza um jogo com placar e gols das jogadoras
+     * Apenas o criador do jogo pode finalizá-lo
+     * POST /api/games/{id}/finish
+     */
+    @PostMapping("/{id}/finish")
+    @PreAuthorize("hasRole('ORGANIZATION') or hasRole('PLAYER')")
+    public ResponseEntity<GameResponse> finishGame(
+            @PathVariable Long id,
+            @Valid @RequestBody FinishGameRequest request) {
+        GameResponse finishedGame = gameService.finishGame(id, request);
+        return ResponseEntity.ok(finishedGame);
+    }
+    
+    /**
+     * Busca vídeos do jogo diretamente do Azure Blob
+     * Busca vídeos próximos ao horário do jogo (±3 horas)
+     * Não salva no banco, busca sob demanda
+     * 
+     * GET /api/games/{id}/videos
+     */
+    @GetMapping("/{id}/videos")
+    public ResponseEntity<Map<String, Object>> getGameVideos(@PathVariable Long id) {
+        try {
+            // Buscar informações do jogo
+            GameResponse game = gameService.findById(id);
+            
+            // Buscar vídeos do blob próximos ao horário do jogo
+            List<Map<String, Object>> videos = gameVideoService.findVideosByGameTimestamp(game.getGameDate());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("gameId", id);
+            response.put("gameName", game.getGameName());
+            response.put("gameDate", game.getGameDate());
+            response.put("videos", videos);
+            response.put("count", videos.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 }

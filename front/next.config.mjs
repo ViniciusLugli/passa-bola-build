@@ -1,41 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable standalone output for Docker/Azure deployment
-  output: "standalone",
+  // Habilita output standalone para Docker otimizado
+  output: 'standalone',
 
-  // Security headers
-  async headers() {
-    return [
+  images: {
+    remotePatterns: [
       {
-        source: "/:path*",
-        headers: [
-          {
-            key: "X-DNS-Prefetch-Control",
-            value: "on",
-          },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
-          },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-          {
-            key: "X-XSS-Protection",
-            value: "1; mode=block",
-          },
-          {
-            key: "Referrer-Policy",
-            value: "strict-origin-when-cross-origin",
-          },
-        ],
+        protocol: "https",
+        hostname: "stdev2495531.blob.core.windows.net",
+        port: "",
+        pathname: "/**",
       },
-    ];
+      {
+        protocol: "https",
+        hostname: "*.blob.core.windows.net",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+    domains: ["stdev2495531.blob.core.windows.net"],
   },
 };
 

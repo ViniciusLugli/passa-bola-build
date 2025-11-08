@@ -1,11 +1,8 @@
 package com.fiap.projects.apipassabola.service;
 
 import com.fiap.projects.apipassabola.dto.response.PostLikeResponse;
-import com.fiap.projects.apipassabola.entity.Post;
-import com.fiap.projects.apipassabola.entity.PostLike;
-import com.fiap.projects.apipassabola.entity.UserType;
-import com.fiap.projects.apipassabola.repository.PostLikeRepository;
-import com.fiap.projects.apipassabola.repository.PostRepository;
+import com.fiap.projects.apipassabola.entity.*;
+import com.fiap.projects.apipassabola.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +22,10 @@ public class PostLikeService {
     private final PostLikeRepository postLikeRepository;
     private final PostRepository postRepository;
     private final UserContextService userContextService;
+    private final NotificationService notificationService;
+    private final PlayerRepository playerRepository;
+    private final OrganizationRepository organizationRepository;
+    private final SpectatorRepository spectatorRepository;
     
     /**
      * Like a post
@@ -66,6 +67,28 @@ public class PostLikeService {
         postRepository.save(post);
         
         log.info("User {} ({}) liked post {}", username, userType, postId);
+        
+        // Enviar notificação ao autor do post (se não for o próprio usuário curtindo)
+        if (!post.getAuthorId().equals(userId) || !post.getAuthorType().equals(userType)) {
+            // Buscar userId global do autor do post
+            Long authorGlobalUserId = getGlobalUserId(post.getAuthorId(), post.getAuthorType());
+            
+            // Buscar userId global do usuário que curtiu
+            UserContextService.UserIdAndType currentGlobalUser = userContextService.getCurrentGlobalUserIdAndType();
+            
+            log.debug("Enviando notificação de like: authorGlobalUserId={}, likerGlobalUserId={}", 
+                    authorGlobalUserId, currentGlobalUser.getUserId());
+            
+            notificationService.notifyPostLiked(
+                    authorGlobalUserId,           // ✅ userId global do autor
+                    post.getAuthorType(),
+                    currentGlobalUser.getUserId(), // ✅ userId global de quem curtiu
+                    userType,
+                    username,
+                    name,
+                    postId
+            );
+        }
         
         return convertToResponse(savedLike);
     }
@@ -222,4 +245,28 @@ public class PostLikeService {
                 throw new RuntimeException("Unknown user type: " + userType);
         }
     }
+    
+    /**
+     * Get global userId from entity ID and type
+     * CRITICAL: This ensures notifications use the correct global userId
+     */
+    private Long getGlobalUserId(Long entityId, UserType userType) {
+        switch (userType) {
+            case PLAYER:
+                return playerRepository.findById(entityId)
+                        .map(Player::getUserId)
+                        .orElseThrow(() -> new RuntimeException("Player not found: " + entityId));
+            case ORGANIZATION:
+                return organizationRepository.findById(entityId)
+                        .map(Organization::getUserId)
+                        .orElseThrow(() -> new RuntimeException("Organization not found: " + entityId));
+            case SPECTATOR:
+                return spectatorRepository.findById(entityId)
+                        .map(Spectator::getUserId)
+                        .orElseThrow(() -> new RuntimeException("Spectator not found: " + entityId));
+            default:
+                throw new RuntimeException("Unknown user type: " + userType);
+        }
+    }
+    
 }
